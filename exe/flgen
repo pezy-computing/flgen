@@ -2,10 +2,10 @@
 # frozen_string_literal: true
 
 $LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
-require 'file_list_generator'
+require 'flgen'
 
 begin
   FLGen::CLI.new.run(ARGV)
-rescue FLGen::FileListGeneratorError => e
+rescue FLGen::FLGenError => e
   abort e.to_s
 end
