@@ -1,6 +1,21 @@
-# File List Generator
+# FLGen
 
 ファイルリストを記述するための DSL と、ファイルリストを生成するための実行コマンドを提供します。
+
+## インストール
+
+### Ruby
+
+FLGen は [Ruby](https://www.ruby-lang.org) で実装されているので、実行には Ruby のインストールが必要です。
+サポートする Ruby のバージョンは 3.0 以上です。インストール方法については、[こちら](https://www.ruby-lang.org/en/downloads/)を参照ください。
+
+### インストールコマンド
+
+FLGen をインストールするには、以下のコマンドを実行します。
+
+```
+$ gem install flgen
+```
 
 ## DSL
 
@@ -30,6 +45,10 @@ Ruby の言語内 DSL として実装されているので、以下の様に `if
 ```ruby
 if target_tool? :vcs
   compile_argument '-sverilog'
+end
+
+10.times do |i|
+  source_file "foo_#{i}.sv"
 end
 ```
 
@@ -102,7 +121,7 @@ foo_project
 
 ## サンプル
 
-http://gitlab.pezy.co.jp/pezy/file_list_generator/-/tree/master/sample
+https://github.com/pezy-computing/flgen/sample
 
 にサンプルがあります。
 
