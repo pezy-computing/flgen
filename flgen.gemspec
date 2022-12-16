@@ -11,8 +11,9 @@ Gem::Specification.new do |spec|
   spec.summary = 'Filelist generator'
   spec.description = spec.summary
   spec.homepage = 'https://github.com/pezy-computing/flgen'
+  spec.license = 'Apache-2.0'
 
-  spec.files = `git ls-files exe lib sample README.md`.split($RS)
+  spec.files = `git ls-files exe lib sample README.md LICENSE`.split($RS)
   spec.bindir = 'exe'
   spec.executables = `git ls-files -- exe/*`.split($RS).map(&File.method(:basename))
   spec.require_paths = ['lib']
