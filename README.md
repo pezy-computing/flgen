@@ -123,7 +123,7 @@ foo_project
 
 ## サンプル
 
-https://github.com/pezy-computing/flgen/sample
+https://github.com/pezy-computing/flgen/tree/master/sample
 
 にサンプルがあります。
 
