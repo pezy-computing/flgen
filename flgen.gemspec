@@ -13,6 +13,13 @@ Gem::Specification.new do |spec|
   spec.homepage = 'https://github.com/pezy-computing/flgen'
   spec.license = 'Apache-2.0'
 
+  spec.metadata = {
+    'bug_tracker_uri' => 'https://github.com/pezy-computing/flgen/issues',
+    'rubygems_mfa_required' => 'true',
+    'source_code_uri' => 'https://github.com/pezy-computing/flgen',
+    'wiki_uri' => 'https://github.com/pezy-computing/flgen/wiki'
+  }
+
   spec.files = `git ls-files exe lib sample README.md LICENSE`.split($RS)
   spec.bindir = 'exe'
   spec.executables = `git ls-files -- exe/*`.split($RS).map(&File.method(:basename))
