@@ -101,7 +101,7 @@ module FLGen
       formatter.new(context)
     end
 
-    def print_header(context, formatter, args)
+    def print_header(_context, formatter, args)
       formatter.header_lines << "#{PROGRAM_NAME} version #{FLGen::VERSION}"
       formatter.header_lines << 'applied arguments'
       args.each do |arg|

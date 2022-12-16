@@ -25,6 +25,7 @@ module FLGen
 
     def remove_ext(ext_list)
       return self unless match_ext?(ext_list)
+
       path = Pathname.new(@path).sub_ext('').to_s
       self.class.new(@root, path)
     end

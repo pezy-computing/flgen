@@ -36,16 +36,19 @@ module FLGen
 
     def add_include_directory(directory)
       return if include_directory_already_added?(directory)
+
       add_compile_argument(Arguments::Include.new(directory))
     end
 
     def add_compile_argument(argument)
       return if runtime?
+
       add_argument(argument)
     end
 
     def add_runtime_argument(argument)
       return unless runtime?
+
       add_argument(argument)
     end
 
@@ -70,6 +73,7 @@ module FLGen
     def target_ext?(file)
       return true unless @options.key?(:collect_ext)
       return true if @options[:collect_ext].empty?
+
       file.match_ext?(@options[:collect_ext])
     end
 
@@ -101,6 +105,7 @@ module FLGen
 
     def add_argument(argument)
       return unless argument.match_tool?(options[:tool])
+
       arguments << argument
     end
   end
