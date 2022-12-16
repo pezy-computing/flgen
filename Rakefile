@@ -8,4 +8,10 @@ require 'bump/tasks'
 RSpec::Core::RakeTask.new(:rspec)
 RuboCop::RakeTask.new(:rubocop)
 
+desc 'Run all RSpec code exmaples and collect code coverage'
+task :coverage do
+  ENV['COVERAGE'] = 'yes'
+  Rake::Task['rspec'].execute
+end
+
 task default: :rspec

@@ -1,4 +1,6 @@
+[![Gem Version](https://badge.fury.io/rb/flgen.svg)](https://badge.fury.io/rb/flgen)
 [![CI](https://github.com/pezy-computing/flgen/actions/workflows/ci.yml/badge.svg)](https://github.com/pezy-computing/flgen/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/github/pezy-computing/flgen/branch/master/graph/badge.svg?token=P5JSMPRV3J)](https://codecov.io/github/pezy-computing/flgen)
 
 # FLGen
 
