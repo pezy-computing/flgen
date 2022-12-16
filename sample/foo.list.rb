@@ -1,0 +1,5 @@
+compile_argument '-foo_0'
+runtime_argument '-foo_1'
+include_directory 'bar'
+source_file 'foo.sv'
+file_list   'sample/bar/bar.list.rb'
