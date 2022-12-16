@@ -5,7 +5,7 @@ require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
 require 'bump/tasks'
 
-RSpec::Core::RakeTask.new(:spec)
+RSpec::Core::RakeTask.new(:rspec)
 RuboCop::RakeTask.new(:rubocop)
 
-task default: :spec
+task default: :rspec

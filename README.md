@@ -1,3 +1,5 @@
+[![CI](https://github.com/pezy-computing/flgen/actions/workflows/ci.yml/badge.svg)](https://github.com/pezy-computing/flgen/actions/workflows/ci.yml)
+
 # FLGen
 
 ファイルリストを記述するための DSL と、ファイルリストを生成するための実行コマンドを提供します。
