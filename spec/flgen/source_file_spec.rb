@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe FileListGenerator::SourceFile do
+RSpec.describe FLGen::SourceFile do
   let(:root_directory) do
     '/fizz/buzz'
   end

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe FileListGenerator::FileList do
+RSpec.describe FLGen::FileList do
   let(:path) do
     '/foo/bar/baz/fizz/buzz/list.rb'
   end
@@ -146,11 +146,11 @@ RSpec.describe FileListGenerator::FileList do
 
         expect {
           file_list.file_list(list_name)
-        }.to raise_error FileListGenerator::NoEntryError, "no such file or directory -- #{list_name} @#{__FILE__}:#{__LINE__ - 1}"
+        }.to raise_error FLGen::NoEntryError, "no such file or directory -- #{list_name} @#{__FILE__}:#{__LINE__ - 1}"
 
         expect {
           file_list.file_list(list_name, from: :current)
-        }.to raise_error FileListGenerator::NoEntryError, "no such file or directory -- #{list_name} @#{__FILE__}:#{__LINE__ - 1}"
+        }.to raise_error FLGen::NoEntryError, "no such file or directory -- #{list_name} @#{__FILE__}:#{__LINE__ - 1}"
       end
     end
 
@@ -242,11 +242,11 @@ RSpec.describe FileListGenerator::FileList do
 
         expect {
           file_list.source_file(source_file_name)
-        }.to raise_error FileListGenerator::NoEntryError, "no such file or directory -- #{source_file_name} @#{__FILE__}:#{__LINE__ - 1}"
+        }.to raise_error FLGen::NoEntryError, "no such file or directory -- #{source_file_name} @#{__FILE__}:#{__LINE__ - 1}"
 
         expect {
           file_list.source_file(source_file_name, from: :root)
-        }.to raise_error FileListGenerator::NoEntryError, "no such file or directory -- #{source_file_name} @#{__FILE__}:#{__LINE__ - 1}"
+        }.to raise_error FLGen::NoEntryError, "no such file or directory -- #{source_file_name} @#{__FILE__}:#{__LINE__ - 1}"
       end
     end
 
@@ -400,11 +400,11 @@ RSpec.describe FileListGenerator::FileList do
 
         expect {
           file_list.include_directory(directories[0])
-        }.to raise_error FileListGenerator::NoEntryError, "no such file or directory -- #{directories[0]} @#{__FILE__}:#{__LINE__ - 1}"
+        }.to raise_error FLGen::NoEntryError, "no such file or directory -- #{directories[0]} @#{__FILE__}:#{__LINE__ - 1}"
 
         expect {
           file_list.include_directory(directories[0], from: :root)
-        }.to raise_error FileListGenerator::NoEntryError, "no such file or directory -- #{directories[0]} @#{__FILE__}:#{__LINE__ - 1}"
+        }.to raise_error FLGen::NoEntryError, "no such file or directory -- #{directories[0]} @#{__FILE__}:#{__LINE__ - 1}"
       end
     end
 

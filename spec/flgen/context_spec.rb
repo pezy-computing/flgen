@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe FileListGenerator::Context do
+RSpec.describe FLGen::Context do
   let(:options) do
     {}
   end
@@ -203,10 +203,10 @@ RSpec.describe FileListGenerator::Context do
   describe '#add_compile_argument' do
     let(:compile_arguments) do
       [
-        FileListGenerator::Arguments::Generic.new('-foo', nil),
-        FileListGenerator::Arguments::Generic.new('-bar', nil),
-        FileListGenerator::Arguments::Generic.new('-baz', :vcs),
-        FileListGenerator::Arguments::Generic.new('-qux', :xcelium)
+        FLGen::Arguments::Generic.new('-foo', nil),
+        FLGen::Arguments::Generic.new('-bar', nil),
+        FLGen::Arguments::Generic.new('-baz', :vcs),
+        FLGen::Arguments::Generic.new('-qux', :xcelium)
       ]
     end
 
@@ -256,10 +256,10 @@ RSpec.describe FileListGenerator::Context do
   describe '#add_runtime_argument' do
     let(:runtime_arguments) do
       [
-        FileListGenerator::Arguments::Generic.new('-foo', nil),
-        FileListGenerator::Arguments::Generic.new('-bar', nil),
-        FileListGenerator::Arguments::Generic.new('-baz', :vcs),
-        FileListGenerator::Arguments::Generic.new('-qux', :xcelium)
+        FLGen::Arguments::Generic.new('-foo', nil),
+        FLGen::Arguments::Generic.new('-bar', nil),
+        FLGen::Arguments::Generic.new('-baz', :vcs),
+        FLGen::Arguments::Generic.new('-qux', :xcelium)
       ]
     end
 

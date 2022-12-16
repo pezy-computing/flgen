@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-module FileListGenerator
-  class FileListGeneratorError < StandardError
+module FLGen
+  class FLGenError < StandardError
   end
 
-  class NoEntryError < FileListGeneratorError
+  class NoEntryError < FLGenError
     def initialize(path, location)
       message =
         "no such file or directory -- #{path} " \

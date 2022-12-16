@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module FileListGenerator
+module FLGen
   class Context
     def initialize(options)
       @options = options

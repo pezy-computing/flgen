@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module FileListGenerator
+module FLGen
   class Formatter
     class << self
       def add_formatter(type, formatter)

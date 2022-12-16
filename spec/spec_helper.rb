@@ -2,7 +2,7 @@
 
 require 'bundler/setup'
 require 'stringio'
-require 'file_list_generator'
+require 'flgen'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

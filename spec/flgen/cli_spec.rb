@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe FileListGenerator::CLI do
+RSpec.describe FLGen::CLI do
   let(:cli) do
     described_class.new
   end
@@ -73,7 +73,7 @@ RSpec.describe FileListGenerator::CLI do
       it 'filelist形式でファイルリストを書き出す' do
         cli.run(["--output=#{output}", file_list])
         expect(io.string).to eq(<<~OUT)
-          //  flgen version #{FileListGenerator::VERSION}
+          //  flgen version #{FLGen::VERSION}
           //  applied arguments
           //    --output=#{output}
           //    #{file_list}

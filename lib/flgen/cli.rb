@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module FileListGenerator
+module FLGen
   class CLI
     PROGRAM_NAME = 'flgen'
 
@@ -102,7 +102,7 @@ module FileListGenerator
     end
 
     def print_header(context, formatter, args)
-      formatter.header_lines << "#{PROGRAM_NAME} version #{FileListGenerator::VERSION}"
+      formatter.header_lines << "#{PROGRAM_NAME} version #{FLGen::VERSION}"
       formatter.header_lines << 'applied arguments'
       args.each do |arg|
         formatter.header_lines << "  #{arg}"

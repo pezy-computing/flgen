@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module FileListGenerator
+module FLGen
   module Arguments
     class Base
       def initialize(type, tool)

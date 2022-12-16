@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module FileListGenerator
+module FLGen
   class FileListFormatter < Formatter
     def format_header_line(line)
       "//  #{line}"

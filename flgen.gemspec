@@ -1,16 +1,16 @@
 # frozen_string_literal: true
 
-require File.expand_path('lib/file_list_generator/version', __dir__)
+require File.expand_path('lib/flgen/version', __dir__)
 
 Gem::Specification.new do |spec|
-  spec.name = 'file_list_generator'
-  spec.version = FileListGenerator::VERSION
+  spec.name = 'flgen'
+  spec.version = FLGen::VERSION
   spec.authors = ['Taichi Ishitani']
   spec.email = ['ishitani@pezy.co.jp']
 
-  spec.summary = 'File list generator for PEZY environment'
+  spec.summary = 'Filelist generator'
   spec.description = spec.summary
-  spec.homepage = 'http://gitlab.pezy.co.jp/pezy/file_list_generator'
+  spec.homepage = 'https://github.com/pezy-computing/flgen'
 
   spec.files = `git ls-files exe lib sample README.md`.split($RS)
   spec.bindir = 'exe'

@@ -5,7 +5,7 @@ $LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
 require 'file_list_generator'
 
 begin
-  FileListGenerator::CLI.new.run(ARGV)
-rescue FileListGenerator::FileListGeneratorError => e
+  FLGen::CLI.new.run(ARGV)
+rescue FLGen::FileListGeneratorError => e
   abort e.to_s
 end
