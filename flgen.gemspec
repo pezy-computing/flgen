@@ -26,8 +26,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
   spec.required_ruby_version = '>= 3.0'
 
-  spec.add_development_dependency 'bump'
+  spec.add_development_dependency 'bump', '~> 0.10.0'
   spec.add_development_dependency 'bundler'
   spec.add_development_dependency 'rake'
-  spec.add_development_dependency 'rspec', '~> 3'
+  spec.add_development_dependency 'rspec', '~> 3.12.0'
 end
