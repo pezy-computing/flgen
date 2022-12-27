@@ -490,7 +490,7 @@ RSpec.describe FLGen::FileList do
       end
     end
 
-    context '指定したディレクトリが存在せず、raise_error:falseが指定されている場合' do
+    context '指定したディレクトリが存在せず、raise_error:f  alseが指定されている場合' do
       it 'エラーを起こさない' do
         file_list = described_class.new(context, path)
         [*root_directories, __dir__].each do |dir|
@@ -505,6 +505,32 @@ RSpec.describe FLGen::FileList do
           file_list.include_directory(include_directories[0], from: :root, raise_error: false)
         }.not_to raise_error
       end
+    end
+  end
+
+  describe '#env?' do
+    it '指定された環境変数が定義されているかを返す' do
+      file_list = described_class.new(context, path)
+
+      expect(file_list.env?('FOO')).to eq false
+      expect(file_list.env?(:FOO)).to eq false
+
+      ENV['FOO'] = 'FOO'
+      expect(file_list.env?('FOO')).to eq true
+      expect(file_list.env?(:FOO)).to eq true
+    end
+  end
+
+  describe '#env' do
+    it '指定された環境変数の値を取り出す' do
+      file_list = described_class.new(context, path)
+      ENV['FOO'] = 'FOO'
+
+      expect(file_list.env('FOO')).to eq 'FOO'
+      expect(file_list.env(:FOO)).to eq 'FOO'
+
+      expect(file_list.env('BAR')).to be_nil
+      expect(file_list.env(:BAR)).to be_nil
     end
   end
 
