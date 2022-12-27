@@ -508,6 +508,198 @@ RSpec.describe FLGen::FileList do
     end
   end
 
+  describe '#file?' do
+    let(:source_file_names) do
+      ['foo.sv', 'bar.sv', 'baz.sv']
+    end
+
+    it '呼び出し元を起点として、指定されたファイルの有無を返す' do
+      file_list = described_class.new(context, path)
+
+      allow(File).to receive(:file?).with(File.join(__dir__, source_file_names[0])).and_return(true)
+      expect(file_list.file?(source_file_names[0])).to eq true
+
+      allow(File).to receive(:file?).with(File.join(__dir__, source_file_names[1])).and_return(false)
+      expect(file_list.file?(source_file_names[1])).to eq false
+    end
+
+    context '絶対パスで指定された場合' do
+      it '指定されたファイルの有無を返す' do
+        file_list = described_class.new(context, path)
+
+        path = File.join(__dir__, source_file_names[0])
+        allow(File).to receive(:file?).with(path).and_return(true)
+        expect(file_list.file?(path)).to eq true
+
+        path = File.join(__dir__, source_file_names[1])
+        allow(File).to receive(:file?).with(path).and_return(false)
+        expect(file_list.file?(path)).to eq false
+      end
+    end
+
+    context 'from: :rootが指定された場合' do
+      it 'ルートディレクトリを起点として、指定されたファイルの有無を返す' do
+        file_list = described_class.new(context, path)
+
+        allow(File).to receive(:file?).with(File.join(root_directories[0], source_file_names[0])).and_return(true)
+        expect(file_list.file?(source_file_names[0], from: :root)).to eq true
+
+        allow(File).to receive(:file?).with(File.join(root_directories[0], source_file_names[1])).and_return(false)
+        allow(File).to receive(:file?).with(File.join(root_directories[1], source_file_names[1])).and_return(true)
+        expect(file_list.file?(source_file_names[1], from: :root)).to eq true
+
+        allow(File).to receive(:file?).with(File.join(root_directories[0], source_file_names[2])).and_return(false)
+        allow(File).to receive(:file?).with(File.join(root_directories[1], source_file_names[2])).and_return(false)
+        expect(file_list.file?(source_file_names[2], from: :root)).to eq false
+      end
+    end
+
+    context 'from: :local_rootが指定された場合' do
+      it '直近のルートディレクトリを起点として、指定されたファイルの有無を返す' do
+        file_list = described_class.new(context, path)
+
+        allow(File).to receive(:file?).with(File.join(root_directories.last, source_file_names[0])).and_return(true)
+        expect(file_list.file?(source_file_names[0], from: :local_root)).to eq true
+
+        allow(File).to receive(:file?).with(File.join(root_directories.last, source_file_names[1])).and_return(false)
+        expect(file_list.file?(source_file_names[1], from: :local_root)).to eq false
+      end
+    end
+
+    context 'from: :currentが指定された場合' do
+      it '呼び出し元を起点として、指定されたファイルの有無を返す' do
+        file_list = described_class.new(context, path)
+
+        allow(File).to receive(:file?).with(File.join(__dir__, source_file_names[0])).and_return(true)
+        expect(file_list.file?(source_file_names[0], from: :current)).to eq true
+
+        allow(File).to receive(:file?).with(File.join(__dir__, source_file_names[1])).and_return(false)
+        expect(file_list.file?(source_file_names[1], from: :current)).to eq false
+      end
+    end
+
+    context 'baseでベースディレクトリが指定された場合' do
+      it 'ベースディレクトリを起点として、指定されたファイルの有無を返す' do
+        file_list = described_class.new(context, path)
+        base = non_root_directories.sample
+
+        allow(File).to receive(:file?).with(File.join(base, source_file_names[0])).and_return(true)
+        expect(file_list.file?(source_file_names[0], base: base)).to eq true
+
+        allow(File).to receive(:file?).with(File.join(base, source_file_names[1])).and_return(false)
+        expect(file_list.file?(source_file_names[1], base: base)).to eq false
+      end
+
+      it 'fromオプションは無視する' do
+        file_list = described_class.new(context, path)
+        base = non_root_directories.sample
+        from_option = [:root, :local_root, :current]
+
+        allow(File).to receive(:file?).with(File.join(base, source_file_names[0])).and_return(true)
+        expect(file_list.file?(source_file_names[0], base: base, from: from_option)).to eq true
+
+        allow(File).to receive(:file?).with(File.join(base, source_file_names[1])).and_return(false)
+        expect(file_list.file?(source_file_names[1], base: base, from: from_option)).to eq false
+      end
+    end
+  end
+
+  describe '#directory?' do
+    let(:directory_names) do
+      ['foo', 'bar/baz', 'qux']
+    end
+
+    it '呼び出し元を起点として、指定されたディレクトリの有無を返す' do
+      file_list = described_class.new(context, path)
+
+      allow(File).to receive(:directory?).with(File.join(__dir__, directory_names[0])).and_return(true)
+      expect(file_list.directory?(directory_names[0])).to eq true
+
+      allow(File).to receive(:directory?).with(File.join(__dir__, directory_names[1])).and_return(false)
+      expect(file_list.directory?(directory_names[1])).to eq false
+    end
+
+    context '絶対パスで指定された場合' do
+      it '指定されたディレクトリ有無を返す' do
+        file_list = described_class.new(context, path)
+
+        path = File.join(__dir__, directory_names[0])
+        allow(File).to receive(:directory?).with(path).and_return(true)
+        expect(file_list.directory?(path)).to eq true
+
+        path = File.join(__dir__, directory_names[1])
+        allow(File).to receive(:directory?).with(path).and_return(false)
+        expect(file_list.directory?(path)).to eq false
+      end
+    end
+
+    context 'from: :rootが指定された場合' do
+      it 'ルートディレクトリを起点として、指定されたディレクトリの有無を返す' do
+        file_list = described_class.new(context, path)
+
+        allow(File).to receive(:directory?).with(File.join(root_directories[0], directory_names[0])).and_return(true)
+        expect(file_list.directory?(directory_names[0], from: :root)).to eq true
+
+        allow(File).to receive(:directory?).with(File.join(root_directories[0], directory_names[1])).and_return(false)
+        allow(File).to receive(:directory?).with(File.join(root_directories[1], directory_names[1])).and_return(true)
+        expect(file_list.directory?(directory_names[1], from: :root)).to eq true
+
+        allow(File).to receive(:directory?).with(File.join(root_directories[0], directory_names[2])).and_return(false)
+        allow(File).to receive(:directory?).with(File.join(root_directories[1], directory_names[2])).and_return(false)
+        expect(file_list.directory?(directory_names[2], from: :root)).to eq false
+      end
+    end
+
+    context 'from: :local_rootが指定された場合' do
+      it '直近のルートディレクトリを起点として、指定されたディレクトリの有無を返す' do
+        file_list = described_class.new(context, path)
+
+        allow(File).to receive(:directory?).with(File.join(root_directories.last, directory_names[0])).and_return(true)
+        expect(file_list.directory?(directory_names[0], from: :local_root)).to eq true
+
+        allow(File).to receive(:directory?).with(File.join(root_directories.last, directory_names[1])).and_return(false)
+        expect(file_list.directory?(directory_names[1], from: :local_root)).to eq false
+      end
+    end
+
+    context 'from: :currentが指定された場合' do
+      it '呼び出し元を起点として、指定されたディレクトリの有無を返す' do
+        file_list = described_class.new(context, path)
+
+        allow(File).to receive(:directory?).with(File.join(__dir__, directory_names[0])).and_return(true)
+        expect(file_list.directory?(directory_names[0], from: :current)).to eq true
+
+        allow(File).to receive(:directory?).with(File.join(__dir__, directory_names[1])).and_return(false)
+        expect(file_list.directory?(directory_names[1], from: :current)).to eq false
+      end
+    end
+
+    context 'baseでベースディレクトリが指定された場合' do
+      it 'ベースディレクトリを起点として、指定されたディレクトリの有無を返す' do
+        file_list = described_class.new(context, path)
+        base = non_root_directories.sample
+
+        allow(File).to receive(:directory?).with(File.join(base, directory_names[0])).and_return(true)
+        expect(file_list.directory?(directory_names[0], base: base)).to eq true
+
+        allow(File).to receive(:directory?).with(File.join(base, directory_names[1])).and_return(false)
+        expect(file_list.directory?(directory_names[1], base: base)).to eq false
+      end
+
+      it 'fromオプションは無視する' do
+        file_list = described_class.new(context, path)
+        base = non_root_directories.sample
+        from_option = [:root, :local_root, :current]
+
+        allow(File).to receive(:directory?).with(File.join(base, directory_names[0])).and_return(true)
+        expect(file_list.directory?(directory_names[0], base: base, from: from_option)).to eq true
+
+        allow(File).to receive(:directory?).with(File.join(base, directory_names[1])).and_return(false)
+        expect(file_list.directory?(directory_names[1], base: base, from: from_option)).to eq false
+      end
+    end
+  end
+
   describe '#env?' do
     it '指定された環境変数が定義されているかを返す' do
       file_list = described_class.new(context, path)
