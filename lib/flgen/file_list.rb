@@ -9,13 +9,13 @@ module FLGen
     end
 
     def file_list(path, from: :root, base: nil, raise_error: true)
-      root = find_root(path, from, base, :file?)
-      load_file_list(root, path, raise_error)
+      location = caller_location
+      load_file_list(path, from, base, location, raise_error)
     end
 
     def source_file(path, from: :current, base: nil, raise_error: true)
-      root = find_root(path, from, base, :file?)
-      add_source_file(root, path, raise_error)
+      location = caller_location
+      add_source_file(path, from, base, location, raise_error)
     end
 
     def define_macro(macro, value = nil)
@@ -27,8 +27,18 @@ module FLGen
     end
 
     def include_directory(path, from: :current, base: nil, raise_error: true)
-      root = find_root(path, from, base, :directory?)
-      add_include_directory(root, path, raise_error)
+      location = caller_location
+      add_include_directory(path, from, base, location, raise_error)
+    end
+
+    def file?(path, from: :current, base: nil)
+      location = caller_location
+      !lookup_root(path, from, base, location, :file?).nil?
+    end
+
+    def directory?(path, from: :current, base: nil)
+      location = caller_location
+      !lookup_root(path, from, base, location, :directory?).nil?
     end
 
     def env?(name)
@@ -36,7 +46,7 @@ module FLGen
     end
 
     def env(name)
-      ENV[name.to_s]
+      ENV.fetch(name.to_s, nil)
     end
 
     def target_tool?(tool)
@@ -69,38 +79,11 @@ module FLGen
       File.exist?(path.join('.git').to_s)
     end
 
-    def find_root(path, from, base, checker)
-      if absolute_path?(path)
-        ''
-      elsif !base.nil?
-        base
-      elsif from == :current
-        current_directory
-      else
-        lookup_root(path, from, checker)
+    def load_file_list(path, from, base, location, raise_error)
+      unless (root = lookup_root(path, from, base, location, :file?))
+        raise_no_entry_error(path, location, raise_error)
+        return
       end
-    end
-
-    def absolute_path?(path)
-      Pathname.new(path).absolute?
-    end
-
-    def current_directory
-      # From Ruby 3.1 Thread::Backtrace::Location#absolute_path returns nil
-      # for code string evaluated by eval methods
-      # see https://github.com/ruby/ruby/commit/64ac984129a7a4645efe5ac57c168ef880b479b2
-      location = caller_locations(3, 1).first
-      path = location.absolute_path || location.path
-      File.dirname(path)
-    end
-
-    def lookup_root(path, from, checker)
-      (from == :root && @root_directories || [@root_directories.last])
-        .find { |root| File.__send__(checker, File.join(root, path)) }
-    end
-
-    def load_file_list(root, path, raise_error)
-      entry_exist?(root, path, :file?, raise_error) || return
 
       # Need to File.realpath to resolve symblic link
       list_path = File.realpath(concat_path(root, path))
@@ -115,26 +98,68 @@ module FLGen
       @context.loaded_file_lists.include?(path)
     end
 
-    def add_source_file(root, path, raise_error)
-      entry_exist?(root, path, :file?, raise_error) || return
+    def add_source_file(path, from, base, location, raise_error)
+      unless (root = lookup_root(path, from, base, location, :file?))
+        raise_no_entry_error(path, location, raise_error)
+        return
+      end
+
       @context.add_source_file(root, path)
     end
 
-    def add_include_directory(root, path, raise_error)
-      entry_exist?(root, path, :directory?, raise_error) || return
+    def add_include_directory(path, from, base, location, raise_error)
+      unless (root = lookup_root(path, from, base, location, :directory?))
+        raise_no_entry_error(path, location, raise_error)
+        return
+      end
 
       directory_path = concat_path(root, path)
       @context.add_include_directory(directory_path)
     end
 
-    def entry_exist?(root, path, checker, raise_error)
-      result = root && File.__send__(checker, concat_path(root, path)) || false
-      result ||
-        raise_error && (raise NoEntryError.new(path, caller_locations(3, 1)[0]))
+    def caller_location
+      caller_locations(2, 1).first
+    end
+
+    def lookup_root(path, from, base, location, checker)
+      search_root(path, from, base, location)
+        .find { |root| File.__send__(checker, concat_path(root, path)) }
+    end
+
+    def search_root(path, from, base, location)
+      if absolute_path?(path)
+        ['']
+      elsif !base.nil?
+        [base]
+      elsif from == :current
+        [current_directory(location)]
+      elsif from == :local_root
+        [@root_directories.last]
+      else
+        @root_directories
+      end
+    end
+
+    def absolute_path?(path)
+      Pathname.new(path).absolute?
+    end
+
+    def current_directory(location)
+      # From Ruby 3.1 Thread::Backtrace::Location#absolute_path returns nil
+      # for code string evaluated by eval methods
+      # see https://github.com/ruby/ruby/commit/64ac984129a7a4645efe5ac57c168ef880b479b2
+      path = location.absolute_path || location.path
+      File.dirname(path)
     end
 
     def concat_path(root, path)
       File.expand_path(path, root)
+    end
+
+    def raise_no_entry_error(path, location, raise_error)
+      return unless raise_error
+
+      raise NoEntryError.new(path, location)
     end
   end
 end
