@@ -8,13 +8,13 @@ module FLGen
       @root_directories = extract_root
     end
 
-    def file_list(path, from: :root, raise_error: true)
-      root = find_root(path, from, :file?)
+    def file_list(path, from: :root, base: nil, raise_error: true)
+      root = find_root(path, from, base, :file?)
       load_file_list(root, path, raise_error)
     end
 
-    def source_file(path, from: :current, raise_error: true)
-      root = find_root(path, from, :file?)
+    def source_file(path, from: :current, base: nil, raise_error: true)
+      root = find_root(path, from, base, :file?)
       add_source_file(root, path, raise_error)
     end
 
@@ -26,8 +26,8 @@ module FLGen
       @context.macros.include?(macro.to_sym)
     end
 
-    def include_directory(path, from: :current, raise_error: true)
-      root = find_root(path, from, :directory?)
+    def include_directory(path, from: :current, base: nil, raise_error: true)
+      root = find_root(path, from, base, :directory?)
       add_include_directory(root, path, raise_error)
     end
 
@@ -61,9 +61,11 @@ module FLGen
       File.exist?(path.join('.git').to_s)
     end
 
-    def find_root(path, from, checker)
+    def find_root(path, from, base, checker)
       if absolute_path?(path)
         ''
+      elsif !base.nil?
+        base
       elsif from == :current
         current_directory
       else
