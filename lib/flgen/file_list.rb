@@ -31,6 +31,14 @@ module FLGen
       add_include_directory(root, path, raise_error)
     end
 
+    def env?(name)
+      ENV.key?(name.to_s)
+    end
+
+    def env(name)
+      ENV[name.to_s]
+    end
+
     def target_tool?(tool)
       target_tool = @context.options[:tool]
       target_tool && tool.to_sym == target_tool || false
