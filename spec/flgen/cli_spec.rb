@@ -89,6 +89,35 @@ RSpec.describe FLGen::CLI do
       end
     end
 
+    context '--format=filelist-xsimが指定された場合' do
+      let(:output) do
+        'out.f'
+      end
+
+      before do
+        allow(File).to receive(:open).with(output, 'w').and_yield(io)
+      end
+
+      it 'xsim対応のfilelist形式でファイルリストを書き出す' do
+        cli.run(["--output=#{output}", '--format=filelist-xsim', file_list])
+        expect(io.string).to eq(<<~OUT)
+          //  flgen version #{FLGen::VERSION}
+          //  applied arguments
+          //    --output=#{output}
+          //    --format=filelist-xsim
+          //    #{file_list}
+          -d #{macros[0]}
+          -d #{macros[1]}
+          -i #{include_directories[0]}
+          -i #{include_directories[1]}
+          #{compile_arguments[0]}
+          #{files[0]}
+          #{files[1]}
+          #{files[2]}
+        OUT
+      end
+    end
+
     context '--no-print-headerが指定された場合' do
       let(:output) do
         'out.f'
