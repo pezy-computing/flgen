@@ -32,7 +32,7 @@ FLGen prives APIs listed below to describe your filelists.
     * Add the given directory to the list of include direcotries.
 * `define_macro(name, value = nil)`
     * Define a text macro.
-* `macro_defined?(name)`
+* `macro?(name)`/`macro_defined?(name)`
     * Return `true` if the given macro is defined.
 * `file?(path, from: :current, base: nil)`
     * Return `treu` if the given file exists.
@@ -54,7 +54,7 @@ FLGen prives APIs listed below to describe your filelists.
 FLGen's filelist is designed as an inernal DSL with Ruby. Therefore you can use Ruby's syntax. For example:
 
 ```ruby
-if macro_defined? :GATE_SIM
+if macro? :GATE_SIM
   source_file 'foo_top.v.gz' # synthsized netlist
 else
   source_file 'foo_top.sv' # RTL

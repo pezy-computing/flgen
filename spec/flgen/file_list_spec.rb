@@ -330,7 +330,7 @@ RSpec.describe FLGen::FileList do
     end
   end
 
-  describe '#macro_defined?' do
+  describe '#macro?/#macro_defined?' do
     let(:macros) do
       [:FOO, :BAR]
     end
@@ -339,6 +339,13 @@ RSpec.describe FLGen::FileList do
       file_list = described_class.new(context, path)
       context.macros << macros[0]
       context.macros << macros[1]
+
+      expect(file_list.macro?(:FOO)).to be true
+      expect(file_list.macro?('FOO')).to be true
+      expect(file_list.macro?(:BAR)).to be true
+      expect(file_list.macro?('BAR')).to be true
+      expect(file_list.macro?(:BAZ)).to be false
+      expect(file_list.macro?('BAZ')).to be false
 
       expect(file_list.macro_defined?(:FOO)).to be true
       expect(file_list.macro_defined?('FOO')).to be true
