@@ -22,9 +22,11 @@ module FLGen
       @context.define_macro(macro, value)
     end
 
-    def macro_defined?(macro)
+    def macro?(macro)
       @context.macros.include?(macro.to_sym)
     end
+
+    alias_method :macro_defined?, :macro?
 
     def include_directory(path, from: :current, base: nil, raise_error: true)
       location = caller_location
