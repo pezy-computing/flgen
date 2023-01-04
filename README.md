@@ -4,75 +4,83 @@
 
 # FLGen
 
-ファイルリストを記述するための DSL と、ファイルリストを生成するための実行コマンドを提供します。
+FLGen provides a DSL to write filelists and generator tool to generate a filelist which is given to EDA tools.
 
-## インストール
+## Install
 
 ### Ruby
 
-FLGen は [Ruby](https://www.ruby-lang.org) で実装されているので、実行には Ruby のインストールが必要です。
-サポートする Ruby のバージョンは 3.0 以上です。インストール方法については、[こちら](https://www.ruby-lang.org/en/downloads/)を参照ください。
+FLGen is written in [Ruby](https://www.ruby-lang.org) programing language and its required version is 3.0 or later. Before using FLGen, you need to install Ruby before using FLGen. See [this page](https://www.ruby-lang.org/en/downloads/) for further details.
 
-### インストールコマンド
+### Install FLGen
 
-FLGen をインストールするには、以下のコマンドを実行します。
+Use the command below to isntall FLGen.
 
 ```
 $ gem install flgen
 ```
 
-## DSL
+## Filelist
 
-ファイルリストを記述するための DSL として以下の構文が定義されています。
+FLGen prives APIs listed below to describe your filelists.
 
-* `source_file(path, from: :current)`
-    * 指定したファイルをファイルリストに追加します
-* `file_list(path, from: :root)`
-    * 指定したファイルリストを読み込みます
+* `source_file(path, from: :current, base: nil)`
+    * Add the given source file to the current filelist.
+* `file_list(path, from: :root, base: nil)`
+    * Load the given filelist.
+* `include_directory(path, from: :current, base: nil)`
+    * Add the given directory to the list of include direcotries.
 * `define_macro(name, value = nil)`
-    * マクロを定義します
+    * Define a text macro.
 * `macro_defined?(name)`
-    * 指定したマクロが定義されているかどうかを返します
-* `include_directory(path, from: :current)`
-    * 指定したパスをインクルードパスとして追加します
-* `target_tool?(tool)`
-    * `tool` が対象ツールかどうかを返します
+    * Return `true` if the given macro is defined.
+* `file?(path, from: :current, base: nil)`
+    * Return `treu` if the given file exists.
+* `directory?(path, from: :current, base: nil)`
+    * Return `true` if the given directory exists.
+* `env?(name)`
+    * Return `true` if the givne environment variable is defined.
+* `env(name)`
+    * Retunr the value of the given environment variable.
 * `compile_argument(argument, tool: nil)`
-    * コンパイル引数を追加します
-    * `tool` が指定されている場合は、対象ツールの場合にのみ、引数を追加します
-* `runtime_argument(argument, tool: nil)`
-    * 実行時引数を追加します
-    * `tool` が指定されている場合は、対象ツールの場合にのみ、引数を追加します
+    * Add the given argument to the list of compile arguments.
+    * If `tool` is specified the given argument is added only when `tool` is matched with the targe tool.
+* `runtime_argumetn(argument, tool: nil)`
+    * Add the given argument to the list of runtime arguments.
+    * If `tool` is specified the given argument is added only when `tool` is matched with the targe tool.
+* `target_tool?(tool)`
+    * Return `true` if the given tool is matched with the targe tool.
 
-Ruby の言語内 DSL として実装されているので、以下の様に `if` など Ruby の構文も使用することができます。
+FLGen's filelist is designed as an inernal DSL with Ruby. Therefore you can use Ruby's syntax. For example:
 
 ```ruby
-if target_tool? :vcs
-  compile_argument '-sverilog'
-end
-
-10.times do |i|
-  source_file "foo_#{i}.sv"
+if macro_defined? :GATE_SIM
+  source_file 'foo_top.v.gz' # synthsized netlist
+else
+  source_file 'foo_top.sv' # RTL
 end
 ```
 
-### `from` オプション引数について
+### About `from`/`base` arguments
 
-`from` は指定されたファイルやディレクトリの基準ディレクトリを指定する引数で、`:current`/`root`/`local_root` を指定することができます。
+The `from` argument is to specify how to search the given file or directory. You can specify one of three below.
 
 * `:current`
-    * 現在のファイルリストがある場所を基準とします
+    * Search the given file or directory from the directory where the current filelist is.
 * `:root`
-    * `.git` があるリポジトリのルートディレクトリを基準ディレクトリとします
-    * あるリポジトリのサブモジュール (上位階層にも `.git` がある) 場合、上位リポジトリのルートディレクトリから順に検索を行います
+    * Search the given file or directory from the repository root directories where the `.git` directory is.
+    * Serch order is descending order.
+        * from upper root direcotries to local root direcoty
 * `:local_root`
-    * 自身が含まれるリポジトリのルートディレクトリを基準ディレクトリとします
+    * Search the given file or directory from the repository root directory where the current filelist belongs to.
 
-ただし、与えられたファイルやディレクトリが絶対パスで指定されている場合は、`from` に関係なく、そのまま追加されます。
+The `from` argument is ignored if the given path is an absolute path or the `base` argument is specified.
 
-#### 例
+The `base` argument is to specify the serach direcotry for the given file or directory.
 
-以下のディレクトリ構造になっていたとします。
+#### Example
+
+This is an exmaple directory structure.
 
 ```
 foo_project
@@ -88,61 +96,85 @@ foo_project
     `-- common.sv
 ```
 
-* `bar.list.rb` で `source_file 'bar.sv', from: :current` とある場合
-    * `foo_project/bar_project/src/bar.sv` が追加される
-* `bar.list.rb` で `source_file 'common/common.sv', from: :root` とある場合
-    * `foo_project/common/common.sv` が追加される
-* `bar.list.rb` で `source_file 'common/common.sv', from: :local_root` とある場合
-    * `foo_project/bar_project/common/common.sv` が追加される
+* `source_file 'bar.sv', from: :current` @ `bar.list.rb`
+    * `foo_project/bar_project/bar.sv` is added.
+* `source_file 'common/common.sv', from: :root` @ `bar.list.rb`
+    * `foo_project/common/common.sv` is added
+* `source_file 'common/bar_common.sv', from: :local_root` @ `bar.list.rb`
+    * `foo_project/bar_project/common/common.sv` is added
 
-## 実行コマンド
+## Generator command
 
-`flgen` が実行コマンドです。`flgen` に DSL で記述されたファイルリストを与えると、EDA ツールに与えるためのファイルリストを出力します。
-また、以下のオプションがあります。
+`flgen` is the generator command and generate a filelist which is given to EDA tools from the given filelists. Command line options are listed below.
 
 * `--define-macro=MACRO[,MACRO]`
-    * マクロ定義を追加します
+    * Define the given macros
 * `--include-directory=DIR[,DIR]`
-    * インクルードディレクトリを追加します
+    * Specify include directories
 * `--compile`
-    * 出力されるファイルリストは `runtime_argument` で指定された実行時引数を含みません
+    * If this option is specified the generated filelist contains source file path, arguments to define macros, arguments to specify include directories and arguments specified by `compile_argument` API.
 * `--runtime`
-    * 出力されるファイルリストは `runtime_argument` で指定された実行時引数だけを含みます
+    * If this option is specified the generated filelist contains arguments specified by `runtime_argumetn`
 * `--tool=TOOL`
-    * 対象となる EDA ツールを指定します
-    * `compile_argument`/`runtime_argument` でツールの指定がある場合、一致する引数がファイルリストに出力されます
+    * Specify the target tool.
 * `--rm-ext=EXT[,EXT]`
-    * 指定された拡張子をソースファイルから削除します
+    * Remove specifyed file extentions from source file path.
 * `--collect-ext=EXT[,EXT]`
-    * 指定された拡張子を持つソースファイルのみがファイルリストに出力されます
+    * The generated filelist contains source file pash which has the specified file extentions.
+* `--format=FORMAT`
+    * Specify the format of the generated filelist.
+    * If no format is specified the generated filelist is for major EDA tools.
+    * If `filelist-xsim` is specified the generated filelist is for Vivado Simulator.
 * `--output=FILE`
-    * 出力するファイルリストのファイル名を指定します
-    * 指定がない場合は、標準出力に出力されます
+    * Specify the path of the generated filelist
+    * The generated fileslist is output to STDOUT if no path is specified.
 * `--[no-]print-header`
-    * ヘッダーを出力するかどうかを指定します。
+    * Specify whether or not the output filelist includes its file header or not.
 * `--source-file-only`
-    * ソースファイルのみがファイルリストに出力されます
+    * The generated filelist contains source file path only if this option is specified.
 
-## サンプル
+## Example
 
-https://github.com/pezy-computing/flgen/tree/master/sample
+You can find an exmpale from [here](https://github.com/pezy-computing/flgen/tree/master/sample).
 
-にサンプルがあります。
+```
+$ flgen --output=filelist.f sample/foo.list.rb
+$ cat filelist.f
+//  flgen version 0.14.0
+//  applied arguments
+//    --output=filelist.f
+//    sample/foo.list.rb
++define+BAR_0
++define+BAR_1=1
++incdir+/home/taichi/workspace/pezy/flgen/sample/bar
++incdir+/home/taichi/workspace/pezy/flgen/sample/bar/baz
+-foo_0
+/home/taichi/workspace/pezy/flgen/sample/foo.sv
+/home/taichi/workspace/pezy/flgen/sample/bar/bar.sv
+/home/taichi/workspace/pezy/flgen/sample/bar/baz/baz.sv
+```
 
-## ライセンス
+[rggen-sample-testbench](https://github.com/rggen/rggen-sample-testbench) uses FLGen. This can be a practical example.
 
-Apache-2.0 ライセンスの元で公開しています。詳しくは、下記及び [LICENSE](LICENSE) を参照ください。
+* https://github.com/rggen/rggen-sample-testbench/blob/master/env/compile.rb
+* https://github.com/rggen/rggen-sample-testbench/blob/master/rtl/compile.rb
 
-    Copyright 2022 PEZY Computing K.K.
+## License
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+FLGen is licensed under the Apache-2.0 license. See [LICNESE](LICENSE) and below for further details.
 
-        http://www.apache.org/licenses/LICENSE-2.0
+```
+Copyright 2022 PEZY Computing K.K.
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
