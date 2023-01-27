@@ -89,6 +89,41 @@ RSpec.describe FLGen::CLI do
       end
     end
 
+    context '--format=vivado-synが指定された場合' do
+      let(:output) do
+        'out.tcl'
+      end
+
+      before do
+        allow(File).to receive(:open).with(output, 'w').and_yield(io)
+      end
+
+      it 'vivadoで読み込み可能なTCLを書き出す' do
+        cli.run(["--output=#{output}", '--format=vivado-syn', file_list])
+        expect(io.string).to eq(<<~TCL)
+          #  flgen version #{FLGen::VERSION}
+          #  applied arguments
+          #    --output=#{output}
+          #    --format=vivado-syn
+          #    #{file_list}
+          set flgen_defines {}
+          lappend flgen_defines "#{macros[0]}"
+          lappend flgen_defines "#{macros[1]}"
+          set_property verilog_define $flgen_defines [current_fileset]
+          set flgen_include_directories {}
+          lappend flgen_include_directories "#{include_directories[0]}"
+          lappend flgen_include_directories "#{include_directories[1]}"
+          set_property include_dirs $flgen_include_directories [current_fileset]
+
+          set flgen_source_files {}
+          lappend flgen_source_files "#{files[0]}"
+          lappend flgen_source_files "#{files[1]}"
+          lappend flgen_source_files "#{files[2]}"
+          add_files -fileset [current_fileset] $flgen_source_files
+        TCL
+      end
+    end
+
     context '--format=filelist-xsimが指定された場合' do
       let(:output) do
         'out.f'

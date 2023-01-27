@@ -123,8 +123,9 @@ foo_project
     * The generated filelist contains source file pash which has the specified file extentions.
 * `--format=FORMAT`
     * Specify the format of the generated filelist.
-    * If no format is specified the generated filelist is for major EDA tools.
-    * If `filelist-xsim` is specified the generated filelist is for Vivado Simulator.
+    * If no format is specified FLGen will generate a generated filelist for major EDA tools.
+    * If `vivado-syn` is specified FLGen will generate a TCL script to load source files for Vivado synthesis.
+    * If `filelist-xsim` is specified FLGen will generate a filelist for Vivado simulator.
 * `--output=FILE`
     * Specify the path of the generated filelist
     * The generated fileslist is output to STDOUT if no path is specified.
