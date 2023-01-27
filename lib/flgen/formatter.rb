@@ -42,6 +42,10 @@ module FLGen
         @context.options[:print_header] && !@context.options[:source_file_only]
     end
 
+    def no_arguments?(type)
+      @context.arguments.none? { |argument| argument.type == type }
+    end
+
     def each_argument(type, &block)
       @context.arguments.each do |argument|
         argument.type == type && block.call(argument)
@@ -49,7 +53,7 @@ module FLGen
     end
 
     def print_macros(io)
-      return if source_file_only?
+      return if source_file_only? || no_arguments?(:define)
 
       pre_macros(io)
       each_argument(:define) do |argument|
@@ -65,7 +69,7 @@ module FLGen
     end
 
     def print_include_directoris(io)
-      return if source_file_only?
+      return if source_file_only? || no_arguments?(:include)
 
       pre_include_directories(io)
       each_argument(:include) do |argument|
@@ -81,7 +85,7 @@ module FLGen
     end
 
     def print_arguments(io)
-      return if source_file_only?
+      return if source_file_only? || no_arguments?(:generic)
 
       pre_arguments(io)
       each_argument(:generic) do |argument|
@@ -101,11 +105,17 @@ module FLGen
     end
 
     def print_source_files(io)
+      return if no_source_files?
+
       pre_source_files(io)
       @context.source_files.each do |file|
         io.puts(format_file_path(file.full_path))
       end
       post_source_files(io)
+    end
+
+    def no_source_files?
+      @context.source_files.empty?
     end
 
     def pre_source_files(_io)
