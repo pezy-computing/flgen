@@ -10,7 +10,7 @@ FLGen provides a DSL to write filelists and generator tool to generate a filelis
 
 ### Ruby
 
-FLGen is written in [Ruby](https://www.ruby-lang.org) programing language and its required version is 3.0 or later. Before using FLGen, you need to install Ruby before using FLGen. See [this page](https://www.ruby-lang.org/en/downloads/) for further details.
+FLGen is written in [Ruby](https://www.ruby-lang.org) programing language and its required version is 3.0 or later. You need to install Ruby before using FLGen. See [this page](https://www.ruby-lang.org/en/documentation/installation/) for further details.
 
 ### Install FLGen
 
