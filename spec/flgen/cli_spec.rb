@@ -89,7 +89,7 @@ RSpec.describe FLGen::CLI do
       end
     end
 
-    context '--format=vivado-synが指定された場合' do
+    context '--format=vivado-tclが指定された場合' do
       let(:output) do
         'out.tcl'
       end
@@ -99,12 +99,12 @@ RSpec.describe FLGen::CLI do
       end
 
       it 'vivadoで読み込み可能なTCLを書き出す' do
-        cli.run(["--output=#{output}", '--format=vivado-syn', file_list])
+        cli.run(["--output=#{output}", '--format=vivado-tcl', file_list])
         expect(io.string).to eq(<<~TCL)
           #  flgen version #{FLGen::VERSION}
           #  applied arguments
           #    --output=#{output}
-          #    --format=vivado-syn
+          #    --format=vivado-tcl
           #    #{file_list}
           set flgen_defines {}
           lappend flgen_defines "#{macros[0]}"
