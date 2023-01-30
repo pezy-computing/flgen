@@ -35,8 +35,8 @@ RSpec.describe FLGen::Context do
       context.add_source_file('/baz/qux', 'fuga.sv')
 
       expect(context.source_files).to match([
-        have_attributes(root: '/foo', path: 'bar/hoge.sv'),
-        have_attributes(root: '/baz/qux', path: 'fuga.sv')
+        have_attributes(path: '/foo/bar/hoge.sv'),
+        have_attributes(path: '/baz/qux/fuga.sv')
       ])
     end
 
@@ -64,8 +64,8 @@ RSpec.describe FLGen::Context do
         context.add_source_file('/foo/bar', 'fuga.sv')
 
         expect(context.source_files).to match([
-          have_attributes(root: '/foo/bar', path: 'hoge.sv.gz'),
-          have_attributes(root: '/foo/bar', path: 'fuga.sv.bz2')
+          have_attributes(path: '/foo/bar/hoge.sv.gz'),
+          have_attributes(path: '/foo/bar/fuga.sv.bz2')
         ])
       end
     end
@@ -83,9 +83,9 @@ RSpec.describe FLGen::Context do
         context.add_source_file('/foo/bar', 'piyo.sv')
 
         expect(context.source_files).to match([
-          have_attributes(root: '/foo/bar', path: 'hoge.sv'),
-          have_attributes(root: '/foo/bar', path: 'fuga.sv'),
-          have_attributes(root: '/foo/bar', path: 'piyo.sv')
+          have_attributes(path: '/foo/bar/hoge.sv'),
+          have_attributes(path: '/foo/bar/fuga.sv'),
+          have_attributes(path: '/foo/bar/piyo.sv')
         ])
       end
     end
@@ -96,16 +96,18 @@ RSpec.describe FLGen::Context do
         allow(File).to receive(:read).with('/foo/bar/fizz/buzz/fuga.sv').and_return(file_contents[1])
         allow(File).to receive(:read).with('/baz/qux/fizz/buzz/hoge.sv').and_return(file_contents[0])
         allow(File).to receive(:read).with('/baz/qux/fizz/buzz/fuga.sv').and_return(file_contents[2])
+        allow(File).to receive(:read).with('/foo/bar/fizz/buzz/hoge.sv').and_return(file_contents[0])
 
         context.add_source_file('/foo/bar', 'fizz/buzz/hoge.sv')
         context.add_source_file('/foo/bar', 'fizz/buzz/fuga.sv')
         context.add_source_file('/baz/qux', 'fizz/buzz/hoge.sv')
         context.add_source_file('/baz/qux', 'fizz/buzz/fuga.sv')
+        context.add_source_file(''        , '/foo/bar/fizz/buzz/hoge.sv')
 
         expect(context.source_files).to match([
-          have_attributes(root: '/foo/bar', path: 'fizz/buzz/hoge.sv'),
-          have_attributes(root: '/foo/bar', path: 'fizz/buzz/fuga.sv'),
-          have_attributes(root: '/baz/qux', path: 'fizz/buzz/fuga.sv')
+          have_attributes(path: '/foo/bar/fizz/buzz/hoge.sv'),
+          have_attributes(path: '/foo/bar/fizz/buzz/fuga.sv'),
+          have_attributes(path: '/baz/qux/fizz/buzz/fuga.sv')
         ])
       end
     end

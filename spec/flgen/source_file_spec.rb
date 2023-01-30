@@ -19,16 +19,16 @@ RSpec.describe FLGen::SourceFile do
 
   def match_path(*path)
     if path.size == 1 && path[0].is_a?(described_class)
-      eq(File.join(path[0].root, path[0].path))
+      eq(path[0].path)
     else
       eq(File.join(*path))
     end
   end
 
-  describe '#full_path' do
+  describe '#path' do
     it '指定されたルートからのソースファイルのパスを返す' do
       source_file = create_soruce_file(root_directory, path)
-      expect(source_file.full_path).to match_path(root_directory, path)
+      expect(source_file.path).to match_path(root_directory, path)
     end
   end
 
@@ -70,26 +70,26 @@ RSpec.describe FLGen::SourceFile do
 
     context '削除対象の拡張子が未指定の場合' do
       it '元のパスを返す' do
-        expect(source_file.remove_ext(nil).full_path).to match_path(source_file)
-        expect(source_file.remove_ext([]).full_path).to match_path(source_file)
+        expect(source_file.remove_ext(nil).path).to match_path(source_file)
+        expect(source_file.remove_ext([]).path).to match_path(source_file)
       end
     end
 
     context 'ソースファイルの拡張子が、削除対象の拡張子に含まれる場合' do
       it '当該拡張子を削除したパスを返す' do
-        expect(source_file.remove_ext(['gz']).full_path).to match_path(root_directory, path)
-        expect(source_file.remove_ext(['.gz']).full_path).to match_path(root_directory, path)
-        expect(source_file.remove_ext(['.bz2', 'gz']).full_path).to match_path(root_directory, path)
-        expect(source_file.remove_ext(['bz2', '.gz']).full_path).to match_path(root_directory, path)
+        expect(source_file.remove_ext(['gz']).path).to match_path(root_directory, path)
+        expect(source_file.remove_ext(['.gz']).path).to match_path(root_directory, path)
+        expect(source_file.remove_ext(['.bz2', 'gz']).path).to match_path(root_directory, path)
+        expect(source_file.remove_ext(['bz2', '.gz']).path).to match_path(root_directory, path)
       end
     end
 
     context 'ソースファイルの拡張子が、削除対象の拡張子に含まれない場合' do
       it '元のパスを返す' do
-        expect(source_file.remove_ext(['bz2']).full_path).to match_path(source_file)
-        expect(source_file.remove_ext(['.bz2']).full_path).to match_path(source_file)
-        expect(source_file.remove_ext(['.zip', 'bz2']).full_path).to match_path(source_file)
-        expect(source_file.remove_ext(['zip', '.bz2']).full_path).to match_path(source_file)
+        expect(source_file.remove_ext(['bz2']).path).to match_path(source_file)
+        expect(source_file.remove_ext(['.bz2']).path).to match_path(source_file)
+        expect(source_file.remove_ext(['.zip', 'bz2']).path).to match_path(source_file)
+        expect(source_file.remove_ext(['zip', '.bz2']).path).to match_path(source_file)
       end
     end
   end

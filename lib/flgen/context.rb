@@ -78,17 +78,15 @@ module FLGen
     end
 
     def source_file_already_added?(file)
-      checksum = file.checksum
-      path = file.path
+      return true if source_files.include?(file.path)
+      return true if checksums.include?(file.checksum)
 
-      return true if checksums[path].include?(checksum)
-
-      checksums[path] << checksum
+      checksums << file.checksum
       false
     end
 
     def checksums
-      @checksums ||= Hash.new { |h, k| h[k] = [] }
+      @checksums ||= []
     end
 
     def add_macro_definition(name, value)
