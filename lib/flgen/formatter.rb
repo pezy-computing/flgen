@@ -109,7 +109,7 @@ module FLGen
 
       pre_source_files(io)
       @context.source_files.each do |file|
-        io.puts(format_file_path(file.full_path))
+        io.puts(format_file_path(file.path))
       end
       post_source_files(io)
     end
