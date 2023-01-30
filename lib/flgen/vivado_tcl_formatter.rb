@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module FLGen
-  class VivadoSynFormatter < Formatter
+  class VivadoTCLFormatter < Formatter
     def format_header_line(line)
       "#  #{line}"
     end
@@ -49,6 +49,6 @@ module FLGen
       io.puts('add_files -fileset [current_fileset] $flgen_source_files')
     end
 
-    Formatter.add_formatter(:'vivado-syn', self)
+    Formatter.add_formatter(:'vivado-tcl', self)
   end
 end
