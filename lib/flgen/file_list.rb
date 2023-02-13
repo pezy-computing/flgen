@@ -15,7 +15,12 @@ module FLGen
 
     def source_file(path, from: :current, base: nil, raise_error: true)
       location = caller_location
-      add_source_file(path, from, base, location, raise_error)
+      add_file_entry(path, from, base, location, raise_error, :add_source_file)
+    end
+
+    def library_file(path, from: :current, base: nil, raise_error: true)
+      location = caller_location
+      add_file_entry(path, from, base, location, raise_error, :add_library_file)
     end
 
     def define_macro(macro, value = nil)
@@ -30,7 +35,12 @@ module FLGen
 
     def include_directory(path, from: :current, base: nil, raise_error: true)
       location = caller_location
-      add_include_directory(path, from, base, location, raise_error)
+      add_directory_entry(path, from, base, location, raise_error, :add_include_directory)
+    end
+
+    def library_directory(path, from: :current, base: nil, raise_error: true)
+      location = caller_location
+      add_directory_entry(path, from, base, location, raise_error, :add_library_directory)
     end
 
     def file?(path, from: :current, base: nil)
@@ -100,24 +110,28 @@ module FLGen
       @context.loaded_file_lists.include?(path)
     end
 
-    def add_source_file(path, from, base, location, raise_error)
+    # rubocop:disable Metrics/ParameterLists
+
+    def add_file_entry(path, from, base, location, raise_error, method)
       unless (root = lookup_root(path, from, base, location, :file?))
         raise_no_entry_error(path, location, raise_error)
         return
       end
 
-      @context.add_source_file(root, path)
+      @context.__send__(method, root, path)
     end
 
-    def add_include_directory(path, from, base, location, raise_error)
+    def add_directory_entry(path, from, base, location, raise_error, method)
       unless (root = lookup_root(path, from, base, location, :directory?))
         raise_no_entry_error(path, location, raise_error)
         return
       end
 
       directory_path = concat_path(root, path)
-      @context.add_include_directory(directory_path)
+      @context.__send__(method, directory_path)
     end
+
+    # rubocop:enable Metrics/ParameterLists
 
     def caller_location
       caller_locations(2, 1).first

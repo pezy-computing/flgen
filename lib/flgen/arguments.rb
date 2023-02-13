@@ -27,9 +27,27 @@ module FLGen
       attr_reader :value
     end
 
+    class LibraryFile < Base
+      def initialize(path)
+        super(:library_file, nil)
+        @path = path
+      end
+
+      attr_reader :path
+    end
+
     class Include < Base
       def initialize(path)
         super(:include, nil)
+        @path = path
+      end
+
+      attr_reader :path
+    end
+
+    class LibraryDirectory < Base
+      def initialize(path)
+        super(:library_directory, nil)
         @path = path
       end
 

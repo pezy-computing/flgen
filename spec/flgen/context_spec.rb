@@ -9,6 +9,14 @@ RSpec.describe FLGen::Context do
     described_class.new(options)
   end
 
+  def match_source_file(path)
+    have_attributes(path: path)
+  end
+
+  def match_argument(type, **attributes)
+    have_attributes(type: type, **attributes)
+  end
+
   describe '#add_source_file' do
     let(:file_contents) do
       contents = []
@@ -35,8 +43,8 @@ RSpec.describe FLGen::Context do
       context.add_source_file('/baz/qux', 'fuga.sv')
 
       expect(context.source_files).to match([
-        have_attributes(path: '/foo/bar/hoge.sv'),
-        have_attributes(path: '/baz/qux/fuga.sv')
+        match_source_file('/foo/bar/hoge.sv'),
+        match_source_file('/baz/qux/fuga.sv')
       ])
     end
 
@@ -64,8 +72,8 @@ RSpec.describe FLGen::Context do
         context.add_source_file('/foo/bar', 'fuga.sv')
 
         expect(context.source_files).to match([
-          have_attributes(path: '/foo/bar/hoge.sv.gz'),
-          have_attributes(path: '/foo/bar/fuga.sv.bz2')
+          match_source_file('/foo/bar/hoge.sv.gz'),
+          match_source_file('/foo/bar/fuga.sv.bz2')
         ])
       end
     end
@@ -83,9 +91,9 @@ RSpec.describe FLGen::Context do
         context.add_source_file('/foo/bar', 'piyo.sv')
 
         expect(context.source_files).to match([
-          have_attributes(path: '/foo/bar/hoge.sv'),
-          have_attributes(path: '/foo/bar/fuga.sv'),
-          have_attributes(path: '/foo/bar/piyo.sv')
+          match_source_file('/foo/bar/hoge.sv'),
+          match_source_file('/foo/bar/fuga.sv'),
+          match_source_file('/foo/bar/piyo.sv')
         ])
       end
     end
@@ -105,9 +113,74 @@ RSpec.describe FLGen::Context do
         context.add_source_file(''        , '/foo/bar/fizz/buzz/hoge.sv')
 
         expect(context.source_files).to match([
-          have_attributes(path: '/foo/bar/fizz/buzz/hoge.sv'),
-          have_attributes(path: '/foo/bar/fizz/buzz/fuga.sv'),
-          have_attributes(path: '/baz/qux/fizz/buzz/fuga.sv')
+          match_source_file('/foo/bar/fizz/buzz/hoge.sv'),
+          match_source_file('/foo/bar/fizz/buzz/fuga.sv'),
+          match_source_file('/baz/qux/fizz/buzz/fuga.sv')
+        ])
+      end
+    end
+  end
+
+  describe '#add_library_file' do
+    let(:file_contents) do
+      contents = []
+      contents << <<~'CODE'
+        module hoge;
+        endmodule
+      CODE
+      contents << <<~'CODE'
+        module fuga;
+        endmodule
+      CODE
+      contents << <<~'CODE'
+        module piyo;
+        endmodule
+      CODE
+      contents
+    end
+
+    it '指定したライブラリファイルを追加する' do
+      allow(File).to receive(:read).with('/foo/bar/hoge.sv').and_return(file_contents[0])
+      allow(File).to receive(:read).with('/baz/qux/fuga.sv').and_return(file_contents[1])
+
+      context.add_library_file('/foo', 'bar/hoge.sv')
+      context.add_library_file('/baz/qux', 'fuga.sv')
+
+      expect(context.arguments).to match([
+        match_argument(:library_file, path: match_source_file('/foo/bar/hoge.sv')),
+        match_argument(:library_file, path: match_source_file('/baz/qux/fuga.sv'))
+      ])
+    end
+
+    context 'options[:runtime]がtrueの場合' do
+      specify 'ライブラリファイルの追加は行わない' do
+        options[:runtime] = true
+
+        expect {
+          context.add_library_file('/foo', 'bar/hoge.sv')
+          context.add_library_file('/baz/qux', 'fuga.sv')
+        }.not_to change { context.arguments.size }
+      end
+    end
+
+    context '同一のファイルが既に追加されている場合' do
+      it '当該ファイルは追加しない' do
+        allow(File).to receive(:read).with('/foo/bar/fizz/buzz/hoge.sv').and_return(file_contents[0])
+        allow(File).to receive(:read).with('/foo/bar/fizz/buzz/fuga.sv').and_return(file_contents[1])
+        allow(File).to receive(:read).with('/baz/qux/fizz/buzz/hoge.sv').and_return(file_contents[0])
+        allow(File).to receive(:read).with('/baz/qux/fizz/buzz/fuga.sv').and_return(file_contents[2])
+        allow(File).to receive(:read).with('/foo/bar/fizz/buzz/hoge.sv').and_return(file_contents[0])
+
+        context.add_library_file('/foo/bar', 'fizz/buzz/hoge.sv')
+        context.add_library_file('/foo/bar', 'fizz/buzz/fuga.sv')
+        context.add_library_file('/baz/qux', 'fizz/buzz/hoge.sv')
+        context.add_library_file('/baz/qux', 'fizz/buzz/fuga.sv')
+        context.add_library_file(''        , '/foo/bar/fizz/buzz/hoge.sv')
+
+        expect(context.arguments).to match([
+          match_argument(:library_file, path: match_source_file('/foo/bar/fizz/buzz/hoge.sv')),
+          match_argument(:library_file, path: match_source_file('/foo/bar/fizz/buzz/fuga.sv')),
+          match_argument(:library_file, path: match_source_file('/baz/qux/fizz/buzz/fuga.sv'))
         ])
       end
     end
@@ -125,8 +198,8 @@ RSpec.describe FLGen::Context do
       context.define_macro('BAR=1')
 
       expect(context.arguments).to match([
-        have_attributes(type: :define, name: :FOO, value: be_nil),
-        have_attributes(type: :define, name: :BAR, value: '1')
+        match_argument(:define, name: :FOO, value: be_nil),
+        match_argument(:define, name: :BAR, value: '1')
       ])
     end
 
@@ -148,15 +221,15 @@ RSpec.describe FLGen::Context do
         context.define_macro('BAR=1')
         expect(context.macros).to match([:FOO, :BAR])
         expect(context.arguments).to match([
-          have_attributes(type: :define, name: :FOO, value: be_nil),
-          have_attributes(type: :define, name: :BAR, value: '1')
+          match_argument(:define, name: :FOO, value: be_nil),
+          match_argument(:define, name: :BAR, value: '1')
         ])
 
         context.define_macro('FOO=2')
         expect(context.macros).to match([:FOO, :BAR])
         expect(context.arguments).to match([
-          have_attributes(type: :define, name: :BAR, value: '1'),
-          have_attributes(type: :define, name: :FOO, value: '2')
+          match_argument(:define, name: :BAR, value: '1'),
+          match_argument(:define, name: :FOO, value: '2')
         ])
       end
     end
@@ -172,8 +245,8 @@ RSpec.describe FLGen::Context do
       context.add_include_directory(directories[1])
 
       expect(context.arguments).to match([
-        have_attributes(type: :include, path: directories[0]),
-        have_attributes(type: :include, path: directories[1])
+        match_argument(:include, path: directories[0]),
+        match_argument(:include, path: directories[1])
       ])
     end
 
@@ -195,8 +268,48 @@ RSpec.describe FLGen::Context do
         context.add_include_directory(directories[1])
 
         expect(context.arguments).to match([
-          have_attributes(type: :include, path: directories[0]),
-          have_attributes(type: :include, path: directories[1])
+          match_argument(:include, path: directories[0]),
+          match_argument(:include, path: directories[1])
+        ])
+      end
+    end
+  end
+
+  describe '#add_library_directory' do
+    let(:directories) do
+      ['/foo/bar', '/fizz/buzz']
+    end
+
+    it 'ライブラリパスをコンパイル引数として追加する' do
+      context.add_library_directory(directories[0])
+      context.add_library_directory(directories[1])
+
+      expect(context.arguments).to match([
+        match_argument(:library_directory, path: directories[0]),
+        match_argument(:library_directory, path: directories[1])
+      ])
+    end
+
+    context 'options[:runtme]がtrueの場合' do
+      specify 'ライブラリパスの追加は行わない' do
+        options[:runtime] = true
+
+        expect {
+          context.add_library_directory(directories[0])
+          context.add_library_directory(directories[1])
+        }.not_to change { context.arguments.size }
+      end
+    end
+
+    context '追加済みのディレクトリが再度指定された場合' do
+      specify '追加済みのディレクトリは再度追加しない' do
+        context.add_library_directory(directories[0])
+        context.add_library_directory(directories[0])
+        context.add_library_directory(directories[1])
+
+        expect(context.arguments).to match([
+          match_argument(:library_directory, path: directories[0]),
+          match_argument(:library_directory, path: directories[1])
         ])
       end
     end

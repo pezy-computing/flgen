@@ -13,6 +13,13 @@ RSpec.describe FLGen::SourceFile do
     paths[0]
   end
 
+  let(:file_content) do
+    <<~'CODE'
+      module foo;
+      endmodule
+    CODE
+  end
+
   def create_soruce_file(root, path)
     described_class.new(root, path)
   end
@@ -29,6 +36,53 @@ RSpec.describe FLGen::SourceFile do
     it '指定されたルートからのソースファイルのパスを返す' do
       source_file = create_soruce_file(root_directory, path)
       expect(source_file.path).to match_path(root_directory, path)
+    end
+  end
+
+  describe '#==' do
+    let(:file_contents) do
+      contents = []
+      contents << <<~'CODE'
+        module foo;
+        endmodule
+      CODE
+      contents << <<~'CODE'
+        module bar;
+        endmodule
+      CODE
+      contents
+    end
+
+    context '右辺がSourceFileオブジェクトの場合' do
+      it '#pathまたは#checksumが一致するかを返す' do
+        lhs = create_soruce_file(root_directory, path)
+        rhs = create_soruce_file(root_directory, path)
+        expect(lhs).to eq(rhs)
+
+        lhs = create_soruce_file(root_directory, path)
+        rhs = create_soruce_file('/', path)
+        allow(File).to receive(:read).with(lhs.path).and_return(file_contents[0])
+        allow(File).to receive(:read).with(rhs.path).and_return(file_contents[0])
+        expect(lhs).to eq(rhs)
+
+        lhs = create_soruce_file(root_directory, paths[0])
+        rhs = create_soruce_file(root_directory, paths[1])
+        allow(File).to receive(:read).with(lhs.path).and_return(file_contents[0])
+        allow(File).to receive(:read).with(rhs.path).and_return(file_contents[1])
+        expect(lhs).not_to eq(rhs)
+      end
+    end
+
+    context '右辺が文字列の場合' do
+      it '#pathと一致するかを返す' do
+        lhs = create_soruce_file(root_directory, path)
+        rhs = File.join(root_directory, path)
+        expect(lhs).to eq(rhs)
+
+        lhs = create_soruce_file(root_directory, paths[0])
+        rhs = File.join(root_directory, paths[1])
+        expect(lhs).not_to eq(rhs)
+      end
     end
   end
 
@@ -76,11 +130,19 @@ RSpec.describe FLGen::SourceFile do
     end
 
     context 'ソースファイルの拡張子が、削除対象の拡張子に含まれる場合' do
+      before do
+        allow(File).to receive(:read).with(source_file.path).and_return(file_content)
+      end
+
       it '当該拡張子を削除したパスを返す' do
         expect(source_file.remove_ext(['gz']).path).to match_path(root_directory, path)
         expect(source_file.remove_ext(['.gz']).path).to match_path(root_directory, path)
         expect(source_file.remove_ext(['.bz2', 'gz']).path).to match_path(root_directory, path)
         expect(source_file.remove_ext(['bz2', '.gz']).path).to match_path(root_directory, path)
+      end
+
+      specify 'チェックサムは元のファイルのチェックサムを返す' do
+        expect(source_file.remove_ext(['gz']).checksum) == source_file.checksum
       end
     end
 
@@ -95,24 +157,21 @@ RSpec.describe FLGen::SourceFile do
   end
 
   describe '#checksum' do
-    let(:file_content) do
-      <<~'CODE'
-        module foo;
-        endmodule
-      CODE
-    end
-
     let(:checksum) do
       Digest::MD5.digest(file_content)
     end
 
-    let(:source_file) do
-      create_soruce_file(root_directory, path)
-    end
-
     it 'ソースファイルのチェックサムを求める' do
+      source_file = create_soruce_file(root_directory, path)
       allow(File).to receive(:read).with(match_path(source_file)).and_return(file_content)
       expect(source_file.checksum).to eq checksum
+    end
+
+    context '生成時にチェックサムの指定がある場合' do
+      it '指定されたチェックサムを返す' do
+        source_file = described_class.new(root_directory, paths[1], checksum)
+        expect(source_file.checksum).to eq checksum
+      end
     end
   end
 end
