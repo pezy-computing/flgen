@@ -18,6 +18,14 @@ module FLGen
       "+incdir+#{directory}"
     end
 
+    def format_libarary_directory(directory)
+      "-y #{directory}"
+    end
+
+    def format_libarary_file(file)
+      "-v #{file}"
+    end
+
     def fomrat_argument(argument)
       argument
     end

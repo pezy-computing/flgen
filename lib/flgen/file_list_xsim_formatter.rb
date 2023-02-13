@@ -18,6 +18,14 @@ module FLGen
       "-i #{directory}"
     end
 
+    def format_libarary_directory(directory)
+      "-sourcelibdir #{directory}"
+    end
+
+    def format_libarary_file(file)
+      "-sourcelibfile #{file}"
+    end
+
     def fomrat_argument(argument)
       argument
     end

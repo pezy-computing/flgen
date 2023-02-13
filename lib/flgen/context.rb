@@ -20,6 +20,14 @@ module FLGen
         (source_files << file.remove_ext(@options[:rm_ext]))
     end
 
+    def add_library_file(root, path)
+      return if runtime?
+
+      file = SourceFile.new(root, path)
+      add_library_file?(file) &&
+        add_compile_argument(Arguments::LibraryFile.new(file))
+    end
+
     def define_macro(macro, value = nil)
       k, v =
         if value.nil? && macro.respond_to?(:split)
@@ -35,9 +43,15 @@ module FLGen
     end
 
     def add_include_directory(directory)
-      return if include_directory_already_added?(directory)
+      return if directory_already_added?(:include, directory)
 
       add_compile_argument(Arguments::Include.new(directory))
+    end
+
+    def add_library_directory(directory)
+      return if directory_already_added?(:library_directory, directory)
+
+      add_compile_argument(Arguments::LibraryDirectory.new(directory))
     end
 
     def add_compile_argument(argument)
@@ -67,7 +81,7 @@ module FLGen
     end
 
     def add_source_file?(file)
-      target_ext?(file) && !source_file_already_added?(file)
+      target_ext?(file) && source_files.none?(file)
     end
 
     def target_ext?(file)
@@ -77,16 +91,8 @@ module FLGen
       file.match_ext?(@options[:collect_ext])
     end
 
-    def source_file_already_added?(file)
-      return true if source_files.include?(file.path)
-      return true if checksums.include?(file.checksum)
-
-      checksums << file.checksum
-      false
-    end
-
-    def checksums
-      @checksums ||= []
+    def add_library_file?(file)
+      arguments.none? { |arg| arg.type == :library_file && arg.path == file }
     end
 
     def add_macro_definition(name, value)
@@ -96,9 +102,9 @@ module FLGen
       add_compile_argument(Arguments::Define.new(name, value))
     end
 
-    def include_directory_already_added?(path)
+    def directory_already_added?(type, path)
       arguments
-        .any? { |argument| argument.type == :include && argument.path == path }
+        .any? { |argument| argument.type == type && argument.path == path }
     end
 
     def add_argument(argument)

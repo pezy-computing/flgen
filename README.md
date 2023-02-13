@@ -28,8 +28,12 @@ FLGen prives APIs listed below to describe your filelists.
     * Add the given source file to the current filelist.
 * `file_list(path, from: :root, base: nil)`
     * Load the given filelist.
+* `library_file(path, from: :current, base: nil)`
+    * Add the given file to the list of library files.
 * `include_directory(path, from: :current, base: nil)`
     * Add the given directory to the list of include direcotries.
+* `library_directory(path, from: :current, base: nil)`
+    * Add the given directory to the list of library directories.
 * `define_macro(name, value = nil)`
     * Define a text macro.
 * `macro?(name)`/`macro_defined?(name)`
@@ -141,7 +145,7 @@ You can find an exmpale from [here](https://github.com/pezy-computing/flgen/tree
 ```
 $ flgen --output=filelist.f sample/foo.list.rb
 $ cat filelist.f
-//  flgen version 0.14.0
+//  flgen version 0.17.0
 //  applied arguments
 //    --output=filelist.f
 //    sample/foo.list.rb
@@ -149,6 +153,8 @@ $ cat filelist.f
 +define+BAR_1=1
 +incdir+/home/taichi/workspace/pezy/flgen/sample/bar
 +incdir+/home/taichi/workspace/pezy/flgen/sample/bar/baz
+-y /home/taichi/workspace/pezy/flgen/sample/bar/bar_lib
+-v /home/taichi/workspace/pezy/flgen/sample/foo_lib.sv
 -foo_0
 /home/taichi/workspace/pezy/flgen/sample/foo.sv
 /home/taichi/workspace/pezy/flgen/sample/bar/bar.sv

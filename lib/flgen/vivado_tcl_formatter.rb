@@ -34,9 +34,6 @@ module FLGen
       io.puts('set_property include_dirs $flgen_include_directories [current_fileset]')
     end
 
-    def fomrat_argument(_)
-    end
-
     def pre_source_files(io)
       io.puts('set flgen_source_files {}')
     end

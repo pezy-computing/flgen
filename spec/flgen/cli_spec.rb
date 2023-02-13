@@ -10,9 +10,13 @@ RSpec.describe FLGen::CLI do
       'foo.sv',
       'bar/bar.sv',
       'bar/baz/baz.sv'
-    ].map do |file|
-      File.join(FLGEN_ROOT, 'sample', file)
-    end
+    ].map(&method(:expand_sample_path))
+  end
+
+  let(:library_files) do
+    [
+      'foo_lib.sv'
+    ].map(&method(:expand_sample_path))
   end
 
   let(:macros) do
@@ -24,9 +28,13 @@ RSpec.describe FLGen::CLI do
       'bar',
       'bar/baz',
       'foo'
-    ].map do |dir|
-      File.join(FLGEN_ROOT, 'sample', dir)
-    end
+    ].map(&method(:expand_sample_path))
+  end
+
+  let(:library_directories) do
+    [
+      'bar/bar_lib'
+    ].map(&method(:expand_sample_path))
   end
 
   let(:compile_arguments) do
@@ -45,6 +53,10 @@ RSpec.describe FLGen::CLI do
     StringIO.new(+'')
   end
 
+  def expand_sample_path(path)
+    File.join(FLGEN_ROOT, 'sample', path)
+  end
+
   describe 'ファイルリスト出力' do
     context '出力先が未指定の場合' do
       it '標準出力にファイルリストを出力する' do
@@ -53,6 +65,8 @@ RSpec.describe FLGen::CLI do
           +define+#{macros[1]}
           +incdir+#{include_directories[0]}
           +incdir+#{include_directories[1]}
+          -y #{library_directories[0]}
+          -v #{library_files[0]}
           #{compile_arguments[0]}
           #{files[0]}
           #{files[1]}
@@ -81,6 +95,8 @@ RSpec.describe FLGen::CLI do
           +define+#{macros[1]}
           +incdir+#{include_directories[0]}
           +incdir+#{include_directories[1]}
+          -y #{library_directories[0]}
+          -v #{library_files[0]}
           #{compile_arguments[0]}
           #{files[0]}
           #{files[1]}
@@ -114,7 +130,6 @@ RSpec.describe FLGen::CLI do
           lappend flgen_include_directories "#{include_directories[0]}"
           lappend flgen_include_directories "#{include_directories[1]}"
           set_property include_dirs $flgen_include_directories [current_fileset]
-
           set flgen_source_files {}
           lappend flgen_source_files "#{files[0]}"
           lappend flgen_source_files "#{files[1]}"
@@ -145,6 +160,8 @@ RSpec.describe FLGen::CLI do
           -d #{macros[1]}
           -i #{include_directories[0]}
           -i #{include_directories[1]}
+          -sourcelibdir #{library_directories[0]}
+          -sourcelibfile #{library_files[0]}
           #{compile_arguments[0]}
           #{files[0]}
           #{files[1]}
@@ -169,6 +186,8 @@ RSpec.describe FLGen::CLI do
           +define+#{macros[1]}
           +incdir+#{include_directories[0]}
           +incdir+#{include_directories[1]}
+          -y #{library_directories[0]}
+          -v #{library_files[0]}
           #{compile_arguments[0]}
           #{files[0]}
           #{files[1]}
@@ -185,6 +204,8 @@ RSpec.describe FLGen::CLI do
         +define+#{macros[1]}
         +incdir+#{include_directories[0]}
         +incdir+#{include_directories[1]}
+        -y #{library_directories[0]}
+        -v #{library_files[0]}
         #{compile_arguments[0]}
         #{files[0]}
         #{files[1]}
@@ -212,6 +233,8 @@ RSpec.describe FLGen::CLI do
         +define+#{macros[1]}
         +incdir+#{include_directories[0]}
         +incdir+#{include_directories[1]}
+        -y #{library_directories[0]}
+        -v #{library_files[0]}
         #{compile_arguments[0]}
         #{compile_arguments[1]}
         #{files[0]}
@@ -226,6 +249,8 @@ RSpec.describe FLGen::CLI do
         +define+#{macros[1]}
         +incdir+#{include_directories[0]}
         +incdir+#{include_directories[1]}
+        -y #{library_directories[0]}
+        -v #{library_files[0]}
         #{compile_arguments[0]}
         #{compile_arguments[2]}
         #{files[0]}
@@ -240,6 +265,8 @@ RSpec.describe FLGen::CLI do
         +define+#{macros[1]}
         +incdir+#{include_directories[0]}
         +incdir+#{include_directories[1]}
+        -y #{library_directories[0]}
+        -v #{library_files[0]}
         #{compile_arguments[0]}
         #{compile_arguments[1]}
         #{files[0]}
@@ -281,6 +308,8 @@ RSpec.describe FLGen::CLI do
         +define+#{macros[1]}
         +incdir+#{include_directories[0]}
         +incdir+#{include_directories[1]}
+        -y #{library_directories[0]}
+        -v #{library_files[0]}
         #{compile_arguments[0]}
         #{files[0]}
         #{files[1]}
@@ -298,6 +327,8 @@ RSpec.describe FLGen::CLI do
         +incdir+#{include_directories[2]}
         +incdir+#{include_directories[0]}
         +incdir+#{include_directories[1]}
+        -y #{library_directories[0]}
+        -v #{library_files[0]}
         #{compile_arguments[0]}
         #{files[0]}
         #{files[1]}
