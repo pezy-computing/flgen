@@ -60,27 +60,33 @@ RSpec.describe FLGen::FileList do
       'piyo.sv'
     end
 
-    def setup_expectation(list_path)
+    def setup_expectation(root, list_name, *invalid_roots)
       new_list = double('file list')
-      allow(File).to receive(:file?).with(list_path).and_return(true)
-      allow(File).to receive(:read).with(list_path).and_return(file_list_content)
+      path =
+        if root.empty?
+          list_name
+        else
+          File.join(root, list_name)
+        end
+      allow(File).to receive(:file?).with(path).and_return(true)
+      allow(File).to receive(:read).with(path).and_return(file_list_content)
 
-      expect(described_class).to receive(:new).with(equal(context), list_path).once.and_return(new_list)
+      expect(described_class).to receive(:new).with(equal(context), path).once.and_return(new_list)
       expect(new_list).to receive(:source_file).with(source_file_name)
 
-      block_given? && yield(new_list)
+      invalid_roots.each do |invalid_root|
+        allow(File).to receive(:file?).with(File.join(invalid_root, list_name)).and_return(false)
+      end
     end
 
     it 'ルートディレクトリ中を検索し、指定されたファイルリストを読み出す' do
       file_list = described_class.new(context, path)
       list_paths = root_directories.map { |dir| File.join(dir, list_name) }
 
-      setup_expectation(list_paths[0])
+      setup_expectation(root_directories[0], list_name)
       file_list.file_list(list_name)
 
-      setup_expectation(list_paths[1]) do
-        allow(File).to receive(:file?).with(list_paths[0]).and_return(false)
-      end
+      setup_expectation(root_directories[1], list_name, root_directories[0])
       file_list.file_list(list_name)
     end
 
@@ -89,7 +95,7 @@ RSpec.describe FLGen::FileList do
         file_list = described_class.new(context, '')
         list_path = File.join(root_directories[0], list_name)
 
-        setup_expectation(list_path)
+        setup_expectation('', list_path)
         file_list.file_list(list_path)
       end
     end
@@ -97,14 +103,11 @@ RSpec.describe FLGen::FileList do
     context 'from: :rootが指定された場合' do
       it 'ルートディレクトリ中を検索し、指定されたファイルリストを読み出す' do
         file_list = described_class.new(context, path)
-        list_paths = root_directories.map { |dir| File.join(dir, list_name) }
 
-        setup_expectation(list_paths[0])
+        setup_expectation(root_directories[0], list_name)
         file_list.file_list(list_name)
 
-        setup_expectation(list_paths[1]) do
-          allow(File).to receive(:file?).with(list_paths[0]).and_return(false)
-        end
+        setup_expectation(root_directories[1], list_name, root_directories[0])
         file_list.file_list(list_name)
       end
     end
@@ -112,8 +115,8 @@ RSpec.describe FLGen::FileList do
     context 'from: :local_rootが指定された場合' do
       it '直近のリポジトリルートから検索を行う' do
         file_list = described_class.new(context, path)
-        list_path = File.join(root_directories.last, list_name)
-        setup_expectation(list_path)
+
+        setup_expectation(root_directories.last, list_name)
         file_list.file_list(list_name, from: :local_root)
       end
     end
@@ -121,8 +124,8 @@ RSpec.describe FLGen::FileList do
     context 'from: :currentが指定された場合' do
       it '呼び出し元を起点として、指定されたファイルリストを読み出す' do
         file_list = described_class.new(context, path)
-        list_path = File.join(__dir__, list_name)
-        setup_expectation(list_path)
+
+        setup_expectation(__dir__, list_name)
         file_list.file_list(list_name, from: :current)
       end
     end
@@ -131,29 +134,63 @@ RSpec.describe FLGen::FileList do
       it '指定されたファイルリストをベースディレクトリから読み出す' do
         base = non_root_directories.sample
         file_list = described_class.new(context, path)
-        list_path = File.join(base, list_name)
-        setup_expectation(list_path)
+
+        setup_expectation(base, list_name)
         file_list.file_list(list_name, from: base)
       end
+    end
+
+    specify '#default_search_pathでfrom:未指定時の挙動を変更できる' do
+      file_list = described_class.new(context, path)
+
+      context.loaded_file_lists.clear
+      setup_expectation(root_directories[0], list_name)
+      file_list.default_search_path(file_list: :root)
+      file_list.file_list(list_name)
+
+      context.loaded_file_lists.clear
+      setup_expectation(root_directories.last, list_name)
+      file_list.default_search_path(file_list: :local_root)
+      file_list.file_list(list_name)
+
+      context.loaded_file_lists.clear
+      setup_expectation(root_directories.last, list_name)
+      file_list.default_search_path(file_list: :local_root)
+      file_list.file_list(list_name)
+
+      context.loaded_file_lists.clear
+      setup_expectation(__dir__, list_name)
+      file_list.default_search_path(file_list: :current)
+      file_list.file_list(list_name)
+
+      context.loaded_file_lists.clear
+      base = non_root_directories.sample
+      setup_expectation(base, list_name)
+      file_list.default_search_path(file_list: base)
+      file_list.file_list(list_name)
+
+      context.loaded_file_lists.clear
+      setup_expectation(root_directories[1], list_name, root_directories[0])
+      file_list.reset_default_search_path(:file_list)
+      file_list.file_list(list_name)
     end
 
     context '複数回同じファイルリストが指定された場合' do
       specify '２回目以降は読み込まない' do
         file_list = described_class.new(context, path)
 
-        paths = [
-          root_directories[0], __dir__
-        ].map { |path| File.join(path, list_name) }
-
-        setup_expectation(paths[0])
+        setup_expectation(root_directories[0], list_name)
         file_list.file_list(list_name)
         file_list.file_list(list_name)
 
-        setup_expectation(paths[1])
+        setup_expectation(__dir__, list_name)
         file_list.file_list(list_name, from: :current)
         file_list.file_list(list_name, from: :current)
 
-        expect(context.loaded_file_lists).to match(paths)
+        expect(context.loaded_file_lists).to match([
+          File.join(root_directories[0], list_name),
+          File.join(__dir__, list_name)
+        ])
       end
     end
 
@@ -197,11 +234,26 @@ RSpec.describe FLGen::FileList do
       'piyo.sv'
     end
 
+    def setup_expectation(root, file_name, *invalid_roots)
+      path =
+        if root.empty?
+          file_name
+        else
+          File.join(root, file_name)
+        end
+
+      allow(File).to receive(:file?).with(path).and_return(true)
+      expect(context).to receive(:add_source_file).with(path)
+
+      invalid_roots.each do |invalid_root|
+        allow(File).to receive(:file?).with(File.join(invalid_root, file_name)).and_return(false)
+      end
+    end
+
     it '呼び出し元を起点として、contextにソースファイルを追加する' do
       file_list = described_class.new(context, path)
 
-      allow(File).to receive(:file?).with(File.join(__dir__, source_file_name)).and_return(true)
-      expect(context).to receive(:add_source_file).with(__dir__, source_file_name)
+      setup_expectation(__dir__, source_file_name)
       file_list.source_file(source_file_name)
     end
 
@@ -210,8 +262,7 @@ RSpec.describe FLGen::FileList do
         file_list = described_class.new(context, '')
         path = File.join(__dir__, source_file_name)
 
-        allow(File).to receive(:file?).with(path).and_return(true)
-        expect(context).to receive(:add_source_file).with('', path)
+        setup_expectation('', path)
         file_list.source_file(path)
       end
     end
@@ -219,15 +270,11 @@ RSpec.describe FLGen::FileList do
     context 'from: :rootが指定された場合' do
       it 'ルートディレクトリ中を検索し、contextにソースファイルを追加する' do
         file_list = described_class.new(context, path)
-        file_paths = root_directories.map { |root| File.join(root, source_file_name) }
 
-        allow(File).to receive(:file?).with(file_paths[0]).and_return(true)
-        expect(context).to receive(:add_source_file).with(root_directories[0], source_file_name)
+        setup_expectation(root_directories[0], source_file_name)
         file_list.source_file(source_file_name, from: :root)
 
-        allow(File).to receive(:file?).with(file_paths[0]).and_return(false)
-        allow(File).to receive(:file?).with(file_paths[1]).and_return(true)
-        expect(context).to receive(:add_source_file).with(root_directories[1], source_file_name)
+        setup_expectation(root_directories[1], source_file_name, root_directories[0])
         file_list.source_file(source_file_name, from: :root)
       end
     end
@@ -237,8 +284,7 @@ RSpec.describe FLGen::FileList do
         file_path = File.join(root_directories.last, source_file_name)
         file_list = described_class.new(context, path)
 
-        allow(File).to receive(:file?).with(file_path).and_return(true)
-        expect(context).to receive(:add_source_file).with(root_directories.last, source_file_name)
+        setup_expectation(root_directories.last, source_file_name)
         file_list.source_file(source_file_name, from: :local_root)
       end
     end
@@ -247,8 +293,7 @@ RSpec.describe FLGen::FileList do
       it '呼び出し元を起点として、contextにソースファイルを追加する' do
         file_list = described_class.new(context, path)
 
-        allow(File).to receive(:file?).with(File.join(__dir__, source_file_name)).and_return(true)
-        expect(context).to receive(:add_source_file).with(__dir__, source_file_name)
+        setup_expectation(__dir__, source_file_name)
         file_list.source_file(source_file_name, from: :current)
       end
     end
@@ -258,10 +303,34 @@ RSpec.describe FLGen::FileList do
         file_list = described_class.new(context, path)
 
         base = non_root_directories.sample
-        allow(File).to receive(:file?).with(File.join(base, source_file_name)).and_return(true)
-        expect(context).to receive(:add_source_file).with(base, source_file_name)
+        setup_expectation(base, source_file_name)
         file_list.source_file(source_file_name, from: base)
       end
+    end
+
+    specify '#default_search_pathでfrom:未指定時の挙動を変更できる' do
+      file_list = described_class.new(context, path)
+
+      setup_expectation(root_directories[0], source_file_name)
+      file_list.default_search_path(source_file: :root)
+      file_list.source_file(source_file_name)
+
+      setup_expectation(root_directories.last, source_file_name)
+      file_list.default_search_path(source_file: :local_root)
+      file_list.source_file(source_file_name)
+
+      setup_expectation(__dir__, source_file_name)
+      file_list.default_search_path(source_file: :current)
+      file_list.source_file(source_file_name)
+
+      base = non_root_directories.sample
+      setup_expectation(base, source_file_name)
+      file_list.default_search_path(source_file: base)
+      file_list.source_file(source_file_name)
+
+      setup_expectation(__dir__, source_file_name)
+      file_list.reset_default_search_path(:source_file)
+      file_list.source_file(source_file_name)
     end
 
     context '指定したソースファイルが存在しない場合' do
@@ -304,11 +373,26 @@ RSpec.describe FLGen::FileList do
       'piyo.sv'
     end
 
+    def setup_expectation(root, file_name, *invalid_roots)
+      path =
+        if root.empty?
+          file_name
+        else
+          File.join(root, file_name)
+        end
+
+      allow(File).to receive(:file?).with(path).and_return(true)
+      expect(context).to receive(:add_library_file).with(path)
+
+      invalid_roots.each do |invalid_root|
+        allow(File).to receive(:file?).with(File.join(invalid_root, file_name)).and_return(false)
+      end
+    end
+
     it '呼び出し元を起点に、contextにライブラリファイルを追加する' do
       file_list = described_class.new(context, path)
 
-      allow(File).to receive(:file?).with(File.join(__dir__, library_file_name)).and_return(true)
-      expect(context).to receive(:add_library_file).with(__dir__, library_file_name)
+      setup_expectation(__dir__, library_file_name)
       file_list.library_file(library_file_name)
     end
 
@@ -317,8 +401,7 @@ RSpec.describe FLGen::FileList do
         file_list = described_class.new(context, '')
         file_path = File.join(__dir__, library_file_name)
 
-        allow(File).to receive(:file?).with(file_path).and_return(true)
-        expect(context).to receive(:add_library_file).with('', file_path)
+        setup_expectation('', file_path)
         file_list.library_file(file_path)
       end
     end
@@ -328,13 +411,10 @@ RSpec.describe FLGen::FileList do
         file_list = described_class.new(context, path)
         file_paths = root_directories.map { |root| File.join(root, library_file_name) }
 
-        allow(File).to receive(:file?).with(file_paths[0]).and_return(true)
-        expect(context).to receive(:add_library_file).with(root_directories[0], library_file_name)
+        setup_expectation(root_directories[0], library_file_name)
         file_list.library_file(library_file_name, from: :root)
 
-        allow(File).to receive(:file?).with(file_paths[0]).and_return(false)
-        allow(File).to receive(:file?).with(file_paths[1]).and_return(true)
-        expect(context).to receive(:add_library_file).with(root_directories[1], library_file_name)
+        setup_expectation(root_directories[1], library_file_name, root_directories[0])
         file_list.library_file(library_file_name, from: :root)
       end
     end
@@ -344,8 +424,7 @@ RSpec.describe FLGen::FileList do
         file_path = File.join(root_directories.last, library_file_name)
         file_list = described_class.new(context, path)
 
-        allow(File).to receive(:file?).with(file_path).and_return(true)
-        expect(context).to receive(:add_library_file).with(root_directories.last, library_file_name)
+        setup_expectation(root_directories.last, library_file_name)
         file_list.library_file(library_file_name, from: :local_root)
       end
     end
@@ -354,8 +433,7 @@ RSpec.describe FLGen::FileList do
       it '呼び出し元を起点として、contextにライブラリファイルを追加する' do
         file_list = described_class.new(context, path)
 
-        allow(File).to receive(:file?).with(File.join(__dir__, library_file_name)).and_return(true)
-        expect(context).to receive(:add_library_file).with(__dir__, library_file_name)
+        setup_expectation(__dir__, library_file_name)
         file_list.library_file(library_file_name, from: :current)
       end
     end
@@ -365,10 +443,34 @@ RSpec.describe FLGen::FileList do
         file_list = described_class.new(context, path)
 
         base = non_root_directories.sample
-        allow(File).to receive(:file?).with(File.join(base, library_file_name)).and_return(true)
-        expect(context).to receive(:add_library_file).with(base, library_file_name)
+        setup_expectation(base, library_file_name)
         file_list.library_file(library_file_name, from: base)
       end
+    end
+
+    specify '#default_search_pathでfrom:未指定時の挙動を変更できる' do
+      file_list = described_class.new(context, path)
+
+      setup_expectation(root_directories[0], library_file_name)
+      file_list.default_search_path(library_file: :root)
+      file_list.library_file(library_file_name)
+
+      setup_expectation(root_directories.last, library_file_name)
+      file_list.default_search_path(library_file: :local_root)
+      file_list.library_file(library_file_name)
+
+      setup_expectation(__dir__, library_file_name)
+      file_list.default_search_path(library_file: :current)
+      file_list.library_file(library_file_name)
+
+      base = non_root_directories.sample
+      setup_expectation(base, library_file_name)
+      file_list.default_search_path(library_file: base)
+      file_list.library_file(library_file_name)
+
+      setup_expectation(__dir__, library_file_name)
+      file_list.reset_default_search_path(:library_file)
+      file_list.library_file(library_file_name)
     end
 
     context '指定したライブラリファイルが存在しない場合' do
@@ -449,16 +551,25 @@ RSpec.describe FLGen::FileList do
       ['foo', 'bar/baz']
     end
 
+    def setup_expectation(root, dir, valid = true)
+      path =
+        if root.empty?
+          dir
+        else
+          File.join(root, dir)
+        end
+
+      allow(File).to receive(:directory?).with(path).and_return(valid)
+      if valid
+        expect(context).to receive(:add_include_directory).with(path)
+      end
+    end
+
     it '呼び出し元を起点に、指定されたディレクトリをcontextに追加する' do
       file_list = described_class.new(context, path)
-      directory_paths = include_directories.map { |dir| File.join(__dir__, dir) }
 
-      allow(File).to receive(:directory?).with(File.join(directory_paths[0])).and_return(true)
-      allow(File).to receive(:directory?).with(File.join(directory_paths[1])).and_return(true)
-
-      expect(context).to receive(:add_include_directory).with(directory_paths[0])
-      expect(context).to receive(:add_include_directory).with(directory_paths[1])
-
+      setup_expectation(__dir__, include_directories[0])
+      setup_expectation(__dir__, include_directories[1])
       file_list.include_directory(include_directories[0])
       file_list.include_directory(include_directories[1])
     end
@@ -468,12 +579,8 @@ RSpec.describe FLGen::FileList do
         file_list = described_class.new(context, path)
         directory_paths = include_directories.map { |dir| File.join('/', dir) }
 
-        allow(File).to receive(:directory?).with(File.join(directory_paths[0])).and_return(true)
-        allow(File).to receive(:directory?).with(File.join(directory_paths[1])).and_return(true)
-
-        expect(context).to receive(:add_include_directory).with(directory_paths[0])
-        expect(context).to receive(:add_include_directory).with(directory_paths[1])
-
+        setup_expectation('', directory_paths[0])
+        setup_expectation('', directory_paths[1])
         file_list.include_directory(directory_paths[0])
         file_list.include_directory(directory_paths[1])
       end
@@ -483,19 +590,9 @@ RSpec.describe FLGen::FileList do
       it 'ルートディレクトリ中を検索し、contextに指定されたディレクトリを追加する' do
         file_list = described_class.new(context, path)
 
-        directory_paths = [
-          File.join(root_directories[0], include_directories[0]),
-          File.join(root_directories[0], include_directories[1]),
-          File.join(root_directories[1], include_directories[1])
-        ]
-
-        allow(File).to receive(:directory?).with(directory_paths[0]).and_return(true)
-        allow(File).to receive(:directory?).with(directory_paths[1]).and_return(false)
-        allow(File).to receive(:directory?).with(directory_paths[2]).and_return(true)
-
-        expect(context).to receive(:add_include_directory).with(directory_paths[0])
-        expect(context).to receive(:add_include_directory).with(directory_paths[2])
-
+        setup_expectation(root_directories[0], include_directories[0], true)
+        setup_expectation(root_directories[0], include_directories[1], false)
+        setup_expectation(root_directories[1], include_directories[1], true)
         file_list.include_directory(include_directories[0], from: :root)
         file_list.include_directory(include_directories[1], from: :root)
       end
@@ -504,14 +601,9 @@ RSpec.describe FLGen::FileList do
     context 'from: :local_rootが指定された場合' do
       it '直近のリポジトリルートから検索を行う' do
         file_list = described_class.new(context, path)
-        directory_paths = include_directories.map { |dir| File.join(root_directories.last, dir) }
 
-        allow(File).to receive(:directory?).with(directory_paths[0]).and_return(true)
-        allow(File).to receive(:directory?).with(directory_paths[1]).and_return(true)
-
-        expect(context).to receive(:add_include_directory).with(directory_paths[0])
-        expect(context).to receive(:add_include_directory).with(directory_paths[1])
-
+        setup_expectation(root_directories.last, include_directories[0])
+        setup_expectation(root_directories.last, include_directories[1])
         file_list.include_directory(include_directories[0], from: :local_root)
         file_list.include_directory(include_directories[1], from: :local_root)
       end
@@ -520,14 +612,9 @@ RSpec.describe FLGen::FileList do
     context 'from: :currentが指定された場合' do
       it '呼び出し元を起点に、指定されたディレクトリをcontextに追加する' do
         file_list = described_class.new(context, path)
-        directory_paths = include_directories.map { |dir| File.join(__dir__, dir) }
 
-        allow(File).to receive(:directory?).with(directory_paths[0]).and_return(true)
-        allow(File).to receive(:directory?).with(directory_paths[1]).and_return(true)
-
-        expect(context).to receive(:add_include_directory).with(directory_paths[0])
-        expect(context).to receive(:add_include_directory).with(directory_paths[1])
-
+        setup_expectation(__dir__, include_directories[0])
+        setup_expectation(__dir__, include_directories[1])
         file_list.include_directory(include_directories[0], from: :current)
         file_list.include_directory(include_directories[1], from: :current)
       end
@@ -537,17 +624,37 @@ RSpec.describe FLGen::FileList do
       it 'ベースディレクトリから、指定されたディレクトリをcontextに追加する' do
         file_list = described_class.new(context, path)
         base = non_root_directories.sample
-        directory_paths = include_directories.map { |dir| File.join(base, dir) }
 
-        allow(File).to receive(:directory?).with(directory_paths[0]).and_return(true)
-        allow(File).to receive(:directory?).with(directory_paths[1]).and_return(true)
-
-        expect(context).to receive(:add_include_directory).with(directory_paths[0])
-        expect(context).to receive(:add_include_directory).with(directory_paths[1])
-
+        setup_expectation(base, include_directories[0])
+        setup_expectation(base, include_directories[1])
         file_list.include_directory(include_directories[0], from: base)
         file_list.include_directory(include_directories[1], from: base)
       end
+    end
+
+    specify '#default_search_pathでfrom:未指定時の挙動を変更できる' do
+      file_list = described_class.new(context, path)
+
+      setup_expectation(root_directories[0], include_directories[0])
+      file_list.default_search_path(include_directory: :root)
+      file_list.include_directory(include_directories[0])
+
+      setup_expectation(root_directories.last, include_directories[0])
+      file_list.default_search_path(include_directory: :local_root)
+      file_list.include_directory(include_directories[0])
+
+      setup_expectation(__dir__, include_directories[0])
+      file_list.default_search_path(include_directory: :current)
+      file_list.include_directory(include_directories[0])
+
+      base = non_root_directories.sample
+      setup_expectation(base, include_directories[0])
+      file_list.default_search_path(include_directory: base)
+      file_list.include_directory(include_directories[0])
+
+      setup_expectation(__dir__, include_directories[0])
+      file_list.reset_default_search_path(:include_directory)
+      file_list.include_directory(include_directories[0])
     end
 
     context '指定したディレクトリが存在しない場合' do
@@ -567,7 +674,7 @@ RSpec.describe FLGen::FileList do
       end
     end
 
-    context '指定したディレクトリが存在せず、raise_error:f  alseが指定されている場合' do
+    context '指定したディレクトリが存在せず、raise_error:falseが指定されている場合' do
       it 'エラーを起こさない' do
         file_list = described_class.new(context, path)
         [*root_directories, __dir__].each do |dir|
@@ -590,16 +697,25 @@ RSpec.describe FLGen::FileList do
       ['foo', 'bar/baz']
     end
 
+    def setup_expectation(root, dir, valid = true)
+      path =
+        if root.empty?
+          dir
+        else
+          File.join(root, dir)
+        end
+
+      allow(File).to receive(:directory?).with(path).and_return(valid)
+      if valid
+        expect(context).to receive(:add_library_directory).with(path)
+      end
+    end
+
     it '呼び出し元を起点に、指定されたディレクトリをcontextに追加する' do
       file_list = described_class.new(context, path)
-      directory_paths = library_directories.map { |dir| File.join(__dir__, dir) }
 
-      allow(File).to receive(:directory?).with(File.join(directory_paths[0])).and_return(true)
-      allow(File).to receive(:directory?).with(File.join(directory_paths[1])).and_return(true)
-
-      expect(context).to receive(:add_library_directory).with(directory_paths[0])
-      expect(context).to receive(:add_library_directory).with(directory_paths[1])
-
+      setup_expectation(__dir__, library_directories[0])
+      setup_expectation(__dir__, library_directories[1])
       file_list.library_directory(library_directories[0])
       file_list.library_directory(library_directories[1])
     end
@@ -609,12 +725,8 @@ RSpec.describe FLGen::FileList do
         file_list = described_class.new(context, path)
         directory_paths = library_directories.map { |dir| File.join('/', dir) }
 
-        allow(File).to receive(:directory?).with(File.join(directory_paths[0])).and_return(true)
-        allow(File).to receive(:directory?).with(File.join(directory_paths[1])).and_return(true)
-
-        expect(context).to receive(:add_library_directory).with(directory_paths[0])
-        expect(context).to receive(:add_library_directory).with(directory_paths[1])
-
+        setup_expectation('', directory_paths[0])
+        setup_expectation('', directory_paths[1])
         file_list.library_directory(directory_paths[0])
         file_list.library_directory(directory_paths[1])
       end
@@ -624,19 +736,9 @@ RSpec.describe FLGen::FileList do
       it 'ルートディレクトリ中を検索し、contextに指定されたディレクトリを追加する' do
         file_list = described_class.new(context, path)
 
-        directory_paths = [
-          File.join(root_directories[0], library_directories[0]),
-          File.join(root_directories[0], library_directories[1]),
-          File.join(root_directories[1], library_directories[1])
-        ]
-
-        allow(File).to receive(:directory?).with(directory_paths[0]).and_return(true)
-        allow(File).to receive(:directory?).with(directory_paths[1]).and_return(false)
-        allow(File).to receive(:directory?).with(directory_paths[2]).and_return(true)
-
-        expect(context).to receive(:add_library_directory).with(directory_paths[0])
-        expect(context).to receive(:add_library_directory).with(directory_paths[2])
-
+        setup_expectation(root_directories[0], library_directories[0], true)
+        setup_expectation(root_directories[0], library_directories[1], false)
+        setup_expectation(root_directories[1], library_directories[1], true)
         file_list.library_directory(library_directories[0], from: :root)
         file_list.library_directory(library_directories[1], from: :root)
       end
@@ -645,14 +747,9 @@ RSpec.describe FLGen::FileList do
     context 'from: :local_rootが指定された場合' do
       it '直近のリポジトリルートから検索を行う' do
         file_list = described_class.new(context, path)
-        directory_paths = library_directories.map { |dir| File.join(root_directories.last, dir) }
 
-        allow(File).to receive(:directory?).with(directory_paths[0]).and_return(true)
-        allow(File).to receive(:directory?).with(directory_paths[1]).and_return(true)
-
-        expect(context).to receive(:add_library_directory).with(directory_paths[0])
-        expect(context).to receive(:add_library_directory).with(directory_paths[1])
-
+        setup_expectation(root_directories.last, library_directories[0])
+        setup_expectation(root_directories.last, library_directories[1])
         file_list.library_directory(library_directories[0], from: :local_root)
         file_list.library_directory(library_directories[1], from: :local_root)
       end
@@ -661,14 +758,9 @@ RSpec.describe FLGen::FileList do
     context 'from: :currentが指定された場合' do
       it '呼び出し元を起点に、指定されたディレクトリをcontextに追加する' do
         file_list = described_class.new(context, path)
-        directory_paths = library_directories.map { |dir| File.join(__dir__, dir) }
 
-        allow(File).to receive(:directory?).with(directory_paths[0]).and_return(true)
-        allow(File).to receive(:directory?).with(directory_paths[1]).and_return(true)
-
-        expect(context).to receive(:add_library_directory).with(directory_paths[0])
-        expect(context).to receive(:add_library_directory).with(directory_paths[1])
-
+        setup_expectation(__dir__, library_directories[0])
+        setup_expectation(__dir__, library_directories[1])
         file_list.library_directory(library_directories[0], from: :current)
         file_list.library_directory(library_directories[1], from: :current)
       end
@@ -678,17 +770,37 @@ RSpec.describe FLGen::FileList do
       it 'ベースディレクトリから、指定されたディレクトリをcontextに追加する' do
         file_list = described_class.new(context, path)
         base = non_root_directories.sample
-        directory_paths = library_directories.map { |dir| File.join(base, dir) }
 
-        allow(File).to receive(:directory?).with(directory_paths[0]).and_return(true)
-        allow(File).to receive(:directory?).with(directory_paths[1]).and_return(true)
-
-        expect(context).to receive(:add_library_directory).with(directory_paths[0])
-        expect(context).to receive(:add_library_directory).with(directory_paths[1])
-
+        setup_expectation(base, library_directories[0])
+        setup_expectation(base, library_directories[1])
         file_list.library_directory(library_directories[0], from: base)
         file_list.library_directory(library_directories[1], from: base)
       end
+    end
+
+    specify '#default_search_pathでfrom:未指定時の挙動を変更できる' do
+      file_list = described_class.new(context, path)
+
+      setup_expectation(root_directories[0], library_directories[0])
+      file_list.default_search_path(library_directory: :root)
+      file_list.library_directory(library_directories[0])
+
+      setup_expectation(root_directories.last, library_directories[0])
+      file_list.default_search_path(library_directory: :local_root)
+      file_list.library_directory(library_directories[0])
+
+      setup_expectation(__dir__, library_directories[0])
+      file_list.default_search_path(library_directory: :current)
+      file_list.library_directory(library_directories[0])
+
+      base = non_root_directories.sample
+      setup_expectation(base, library_directories[0])
+      file_list.default_search_path(library_directory: base)
+      file_list.library_directory(library_directories[0])
+
+      setup_expectation(__dir__, library_directories[0])
+      file_list.reset_default_search_path(:library_directory)
+      file_list.library_directory(library_directories[0])
     end
 
     context '指定したディレクトリが存在しない場合' do

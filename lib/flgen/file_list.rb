@@ -6,21 +6,30 @@ module FLGen
       @context = context
       @path = path
       @root_directories = extract_root
+      @default_search_path = {}
     end
 
-    def file_list(path, from: :root, raise_error: true)
+    def default_search_path(**seach_paths)
+      @default_search_path.update(seach_paths)
+    end
+
+    def reset_default_search_path(*target_types)
+      target_types.each { |type| @default_search_path.delete(type) }
+    end
+
+    def file_list(path, from: nil, raise_error: true)
       location = caller_location
       load_file_list(path, from, location, raise_error)
     end
 
-    def source_file(path, from: :current, raise_error: true)
+    def source_file(path, from: nil, raise_error: true)
       location = caller_location
-      add_file_entry(path, from, location, raise_error, :add_source_file)
+      add_file_entry(path, from, location, raise_error, :source_file)
     end
 
-    def library_file(path, from: :current, raise_error: true)
+    def library_file(path, from: nil, raise_error: true)
       location = caller_location
-      add_file_entry(path, from, location, raise_error, :add_library_file)
+      add_file_entry(path, from, location, raise_error, :library_file)
     end
 
     def define_macro(macro, value = nil)
@@ -33,24 +42,24 @@ module FLGen
 
     alias_method :macro_defined?, :macro?
 
-    def include_directory(path, from: :current, raise_error: true)
+    def include_directory(path, from: nil, raise_error: true)
       location = caller_location
-      add_directory_entry(path, from, location, raise_error, :add_include_directory)
+      add_directory_entry(path, from, location, raise_error, :include_directory)
     end
 
-    def library_directory(path, from: :current, raise_error: true)
+    def library_directory(path, from: nil, raise_error: true)
       location = caller_location
-      add_directory_entry(path, from, location, raise_error, :add_library_directory)
+      add_directory_entry(path, from, location, raise_error, :library_directory)
     end
 
     def file?(path, from: :current)
       location = caller_location
-      !lookup_root(path, from, location, :file?).nil?
+      !extract_file_path(path, from, location, :file).nil?
     end
 
     def directory?(path, from: :current)
       location = caller_location
-      !lookup_root(path, from, location, :directory?).nil?
+      !extract_directory_path(path, from, location, :directory).nil?
     end
 
     def env?(name)
@@ -92,13 +101,13 @@ module FLGen
     end
 
     def load_file_list(path, from, location, raise_error)
-      unless (root = lookup_root(path, from, location, :file?))
+      unless (list_path = extract_file_path(path, from, location, :file_list))
         raise_no_entry_error(path, location, raise_error)
         return
       end
 
       # Need to File.realpath to resolve symblic link
-      list_path = File.realpath(concat_path(root, path))
+      list_path = File.realpath(list_path)
       file_list_already_loaded?(list_path) && return
 
       @context.loaded_file_lists << list_path
@@ -110,22 +119,23 @@ module FLGen
       @context.loaded_file_lists.include?(path)
     end
 
-    def add_file_entry(path, from, location, raise_error, method)
-      unless (root = lookup_root(path, from, location, :file?))
+    def add_file_entry(path, from, location, raise_error, type)
+      unless (file_path = extract_file_path(path, from, location, type))
         raise_no_entry_error(path, location, raise_error)
         return
       end
 
-      @context.__send__(method, root, path)
+      method = "add_#{type}".to_sym
+      @context.__send__(method, file_path)
     end
 
-    def add_directory_entry(path, from, location, raise_error, method)
-      unless (root = lookup_root(path, from, location, :directory?))
+    def add_directory_entry(path, from, location, raise_error, type)
+      unless (directory_path = extract_directory_path(path, from, location, type))
         raise_no_entry_error(path, location, raise_error)
         return
       end
 
-      directory_path = concat_path(root, path)
+      method = "add_#{type}".to_sym
       @context.__send__(method, directory_path)
     end
 
@@ -133,22 +143,37 @@ module FLGen
       caller_locations(2, 1).first
     end
 
-    def lookup_root(path, from, location, checker)
-      search_root(path, from, location)
-        .find { |root| File.__send__(checker, concat_path(root, path)) }
+    def extract_file_path(path, from, location, type)
+      extract_path(path, from, location, type, :file?)
     end
 
-    def search_root(path, from, location)
+    def extract_directory_path(path, from, location, type)
+      extract_path(path, from, location, type, :directory?)
+    end
+
+    def extract_path(path, from, location, type, checker)
+      search_root(path, from, location, type)
+        .map { |root| File.expand_path(path, root) }
+        .find { |abs_path| File.__send__(checker, abs_path) && abs_path }
+    end
+
+    DEFAULT_SEARCH_PATH = {
+      file_list: :root, source_file: :current, library_file: :current, file: :current,
+      include_directory: :current, library_directory: :current, directory: :current
+    }.freeze
+
+    def search_root(path, from, location, type)
+      search_path = from || @default_search_path[type] || DEFAULT_SEARCH_PATH[type]
       if absolute_path?(path)
         ['']
-      elsif from == :current
+      elsif search_path == :current
         [current_directory(location)]
-      elsif from == :local_root
+      elsif search_path == :local_root
         [@root_directories.last]
-      elsif from == :root
+      elsif search_path == :root
         @root_directories
       else
-        [from]
+        [search_path]
       end
     end
 
@@ -162,10 +187,6 @@ module FLGen
       # see https://github.com/ruby/ruby/commit/64ac984129a7a4645efe5ac57c168ef880b479b2
       path = location.absolute_path || location.path
       File.dirname(path)
-    end
-
-    def concat_path(root, path)
-      File.expand_path(path, root)
     end
 
     def raise_no_entry_error(path, location, raise_error)

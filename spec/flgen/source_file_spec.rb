@@ -20,8 +20,12 @@ RSpec.describe FLGen::SourceFile do
     CODE
   end
 
-  def create_soruce_file(root, path)
-    described_class.new(root, path)
+  def create_soruce_file(root, path, checksum = nil)
+    if checksum
+      described_class.new(File.join(root, path), checksum)
+    else
+      described_class.new(File.join(root, path))
+    end
   end
 
   def match_path(*path)
@@ -169,7 +173,7 @@ RSpec.describe FLGen::SourceFile do
 
     context '生成時にチェックサムの指定がある場合' do
       it '指定されたチェックサムを返す' do
-        source_file = described_class.new(root_directory, paths[1], checksum)
+        source_file = create_soruce_file(root_directory, paths[1], checksum)
         expect(source_file.checksum).to eq checksum
       end
     end
