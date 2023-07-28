@@ -127,22 +127,13 @@ RSpec.describe FLGen::FileList do
       end
     end
 
-    context 'base: でベースディレクトリが指定された場合' do
+    context 'from: でベースディレクトリが指定された場合' do
       it '指定されたファイルリストをベースディレクトリから読み出す' do
         base = non_root_directories.sample
         file_list = described_class.new(context, path)
         list_path = File.join(base, list_name)
         setup_expectation(list_path)
-        file_list.file_list(list_name, base: base)
-      end
-
-      it 'fromオプションは無視する' do
-        base = non_root_directories.sample
-        from_option = [:root, :local_root, :current].sample
-        file_list = described_class.new(context, path)
-        list_path = File.join(base, list_name)
-        setup_expectation(list_path)
-        file_list.file_list(list_name, base: base, from: from_option)
+        file_list.file_list(list_name, from: base)
       end
     end
 
@@ -262,24 +253,14 @@ RSpec.describe FLGen::FileList do
       end
     end
 
-    context 'baseでベースディレクトリが指定された場合' do
+    context 'from:でベースディレクトリが指定された場合' do
       it '指定されたベースディレクトリから、contextにソースファイルを追加する' do
         file_list = described_class.new(context, path)
 
         base = non_root_directories.sample
         allow(File).to receive(:file?).with(File.join(base, source_file_name)).and_return(true)
         expect(context).to receive(:add_source_file).with(base, source_file_name)
-        file_list.source_file(source_file_name, base: base)
-      end
-
-      it 'fromオプションは無視する' do
-        file_list = described_class.new(context, path)
-
-        base = non_root_directories.sample
-        from_option = [:root, :local_root, :current].sample
-        allow(File).to receive(:file?).with(File.join(base, source_file_name)).and_return(true)
-        expect(context).to receive(:add_source_file).with(base, source_file_name)
-        file_list.source_file(source_file_name, base: base, from: from_option)
+        file_list.source_file(source_file_name, from: base)
       end
     end
 
@@ -379,24 +360,14 @@ RSpec.describe FLGen::FileList do
       end
     end
 
-    context 'baseでベースディレクトリが指定された場合' do
+    context 'from:でベースディレクトリが指定された場合' do
       it '指定されたベースディレクトリから、contextにライブラリファイルを追加する' do
         file_list = described_class.new(context, path)
 
         base = non_root_directories.sample
         allow(File).to receive(:file?).with(File.join(base, library_file_name)).and_return(true)
         expect(context).to receive(:add_library_file).with(base, library_file_name)
-        file_list.library_file(library_file_name, base: base)
-      end
-
-      it 'fromオプションは無視する' do
-        file_list = described_class.new(context, path)
-
-        base = non_root_directories.sample
-        from_option = [:root, :local_root, :current].sample
-        allow(File).to receive(:file?).with(File.join(base, library_file_name)).and_return(true)
-        expect(context).to receive(:add_library_file).with(base, library_file_name)
-        file_list.library_file(library_file_name, base: base, from: from_option)
+        file_list.library_file(library_file_name, from: base)
       end
     end
 
@@ -562,7 +533,7 @@ RSpec.describe FLGen::FileList do
       end
     end
 
-    context 'baseでベースディレクトリが指定された場合' do
+    context 'from:でベースディレクトリが指定された場合' do
       it 'ベースディレクトリから、指定されたディレクトリをcontextに追加する' do
         file_list = described_class.new(context, path)
         base = non_root_directories.sample
@@ -574,26 +545,8 @@ RSpec.describe FLGen::FileList do
         expect(context).to receive(:add_include_directory).with(directory_paths[0])
         expect(context).to receive(:add_include_directory).with(directory_paths[1])
 
-        file_list.include_directory(include_directories[0], base: base)
-        file_list.include_directory(include_directories[1], base: base)
-      end
-
-      it 'fromオプションは無視する' do
-        file_list = described_class.new(context, path)
-        base = non_root_directories.sample
-        directory_paths = include_directories.map { |dir| File.join(base, dir) }
-
-        allow(File).to receive(:directory?).with(directory_paths[0]).and_return(true)
-        allow(File).to receive(:directory?).with(directory_paths[1]).and_return(true)
-
-        expect(context).to receive(:add_include_directory).with(directory_paths[0])
-        expect(context).to receive(:add_include_directory).with(directory_paths[1])
-
-        from_option = [:root, :local_root, :current].sample
-        file_list.include_directory(include_directories[0], base: base, from: from_option)
-
-        from_option = [:root, :local_root, :current].sample
-        file_list.include_directory(include_directories[1], base: base, from: from_option)
+        file_list.include_directory(include_directories[0], from: base)
+        file_list.include_directory(include_directories[1], from: base)
       end
     end
 
@@ -721,7 +674,7 @@ RSpec.describe FLGen::FileList do
       end
     end
 
-    context 'baseでベースディレクトリが指定された場合' do
+    context 'from:でベースディレクトリが指定された場合' do
       it 'ベースディレクトリから、指定されたディレクトリをcontextに追加する' do
         file_list = described_class.new(context, path)
         base = non_root_directories.sample
@@ -733,26 +686,8 @@ RSpec.describe FLGen::FileList do
         expect(context).to receive(:add_library_directory).with(directory_paths[0])
         expect(context).to receive(:add_library_directory).with(directory_paths[1])
 
-        file_list.library_directory(library_directories[0], base: base)
-        file_list.library_directory(library_directories[1], base: base)
-      end
-
-      it 'fromオプションは無視する' do
-        file_list = described_class.new(context, path)
-        base = non_root_directories.sample
-        directory_paths = library_directories.map { |dir| File.join(base, dir) }
-
-        allow(File).to receive(:directory?).with(directory_paths[0]).and_return(true)
-        allow(File).to receive(:directory?).with(directory_paths[1]).and_return(true)
-
-        expect(context).to receive(:add_library_directory).with(directory_paths[0])
-        expect(context).to receive(:add_library_directory).with(directory_paths[1])
-
-        from_option = [:root, :local_root, :current].sample
-        file_list.library_directory(library_directories[0], base: base, from: from_option)
-
-        from_option = [:root, :local_root, :current].sample
-        file_list.library_directory(library_directories[1], base: base, from: from_option)
+        file_list.library_directory(library_directories[0], from: base)
+        file_list.library_directory(library_directories[1], from: base)
       end
     end
 
@@ -861,28 +796,16 @@ RSpec.describe FLGen::FileList do
       end
     end
 
-    context 'baseでベースディレクトリが指定された場合' do
+    context 'from:でベースディレクトリが指定された場合' do
       it 'ベースディレクトリを起点として、指定されたファイルの有無を返す' do
         file_list = described_class.new(context, path)
         base = non_root_directories.sample
 
         allow(File).to receive(:file?).with(File.join(base, file_names[0])).and_return(true)
-        expect(file_list.file?(file_names[0], base: base)).to eq true
+        expect(file_list.file?(file_names[0], from: base)).to eq true
 
         allow(File).to receive(:file?).with(File.join(base, file_names[1])).and_return(false)
-        expect(file_list.file?(file_names[1], base: base)).to eq false
-      end
-
-      it 'fromオプションは無視する' do
-        file_list = described_class.new(context, path)
-        base = non_root_directories.sample
-        from_option = [:root, :local_root, :current]
-
-        allow(File).to receive(:file?).with(File.join(base, file_names[0])).and_return(true)
-        expect(file_list.file?(file_names[0], base: base, from: from_option)).to eq true
-
-        allow(File).to receive(:file?).with(File.join(base, file_names[1])).and_return(false)
-        expect(file_list.file?(file_names[1], base: base, from: from_option)).to eq false
+        expect(file_list.file?(file_names[1], from: base)).to eq false
       end
     end
   end
@@ -957,28 +880,16 @@ RSpec.describe FLGen::FileList do
       end
     end
 
-    context 'baseでベースディレクトリが指定された場合' do
+    context 'fromでベースディレクトリが指定された場合' do
       it 'ベースディレクトリを起点として、指定されたディレクトリの有無を返す' do
         file_list = described_class.new(context, path)
         base = non_root_directories.sample
 
         allow(File).to receive(:directory?).with(File.join(base, directory_names[0])).and_return(true)
-        expect(file_list.directory?(directory_names[0], base: base)).to eq true
+        expect(file_list.directory?(directory_names[0], from: base)).to eq true
 
         allow(File).to receive(:directory?).with(File.join(base, directory_names[1])).and_return(false)
-        expect(file_list.directory?(directory_names[1], base: base)).to eq false
-      end
-
-      it 'fromオプションは無視する' do
-        file_list = described_class.new(context, path)
-        base = non_root_directories.sample
-        from_option = [:root, :local_root, :current]
-
-        allow(File).to receive(:directory?).with(File.join(base, directory_names[0])).and_return(true)
-        expect(file_list.directory?(directory_names[0], base: base, from: from_option)).to eq true
-
-        allow(File).to receive(:directory?).with(File.join(base, directory_names[1])).and_return(false)
-        expect(file_list.directory?(directory_names[1], base: base, from: from_option)).to eq false
+        expect(file_list.directory?(directory_names[1], from: base)).to eq false
       end
     end
   end
