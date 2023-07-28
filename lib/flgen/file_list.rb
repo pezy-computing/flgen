@@ -8,19 +8,19 @@ module FLGen
       @root_directories = extract_root
     end
 
-    def file_list(path, from: :root, base: nil, raise_error: true)
+    def file_list(path, from: :root, raise_error: true)
       location = caller_location
-      load_file_list(path, from, base, location, raise_error)
+      load_file_list(path, from, location, raise_error)
     end
 
-    def source_file(path, from: :current, base: nil, raise_error: true)
+    def source_file(path, from: :current, raise_error: true)
       location = caller_location
-      add_file_entry(path, from, base, location, raise_error, :add_source_file)
+      add_file_entry(path, from, location, raise_error, :add_source_file)
     end
 
-    def library_file(path, from: :current, base: nil, raise_error: true)
+    def library_file(path, from: :current, raise_error: true)
       location = caller_location
-      add_file_entry(path, from, base, location, raise_error, :add_library_file)
+      add_file_entry(path, from, location, raise_error, :add_library_file)
     end
 
     def define_macro(macro, value = nil)
@@ -33,24 +33,24 @@ module FLGen
 
     alias_method :macro_defined?, :macro?
 
-    def include_directory(path, from: :current, base: nil, raise_error: true)
+    def include_directory(path, from: :current, raise_error: true)
       location = caller_location
-      add_directory_entry(path, from, base, location, raise_error, :add_include_directory)
+      add_directory_entry(path, from, location, raise_error, :add_include_directory)
     end
 
-    def library_directory(path, from: :current, base: nil, raise_error: true)
+    def library_directory(path, from: :current, raise_error: true)
       location = caller_location
-      add_directory_entry(path, from, base, location, raise_error, :add_library_directory)
+      add_directory_entry(path, from, location, raise_error, :add_library_directory)
     end
 
-    def file?(path, from: :current, base: nil)
+    def file?(path, from: :current)
       location = caller_location
-      !lookup_root(path, from, base, location, :file?).nil?
+      !lookup_root(path, from, location, :file?).nil?
     end
 
-    def directory?(path, from: :current, base: nil)
+    def directory?(path, from: :current)
       location = caller_location
-      !lookup_root(path, from, base, location, :directory?).nil?
+      !lookup_root(path, from, location, :directory?).nil?
     end
 
     def env?(name)
@@ -91,8 +91,8 @@ module FLGen
       File.exist?(path.join('.git').to_s)
     end
 
-    def load_file_list(path, from, base, location, raise_error)
-      unless (root = lookup_root(path, from, base, location, :file?))
+    def load_file_list(path, from, location, raise_error)
+      unless (root = lookup_root(path, from, location, :file?))
         raise_no_entry_error(path, location, raise_error)
         return
       end
@@ -110,10 +110,8 @@ module FLGen
       @context.loaded_file_lists.include?(path)
     end
 
-    # rubocop:disable Metrics/ParameterLists
-
-    def add_file_entry(path, from, base, location, raise_error, method)
-      unless (root = lookup_root(path, from, base, location, :file?))
+    def add_file_entry(path, from, location, raise_error, method)
+      unless (root = lookup_root(path, from, location, :file?))
         raise_no_entry_error(path, location, raise_error)
         return
       end
@@ -121,8 +119,8 @@ module FLGen
       @context.__send__(method, root, path)
     end
 
-    def add_directory_entry(path, from, base, location, raise_error, method)
-      unless (root = lookup_root(path, from, base, location, :directory?))
+    def add_directory_entry(path, from, location, raise_error, method)
+      unless (root = lookup_root(path, from, location, :directory?))
         raise_no_entry_error(path, location, raise_error)
         return
       end
@@ -131,28 +129,26 @@ module FLGen
       @context.__send__(method, directory_path)
     end
 
-    # rubocop:enable Metrics/ParameterLists
-
     def caller_location
       caller_locations(2, 1).first
     end
 
-    def lookup_root(path, from, base, location, checker)
-      search_root(path, from, base, location)
+    def lookup_root(path, from, location, checker)
+      search_root(path, from, location)
         .find { |root| File.__send__(checker, concat_path(root, path)) }
     end
 
-    def search_root(path, from, base, location)
+    def search_root(path, from, location)
       if absolute_path?(path)
         ['']
-      elsif !base.nil?
-        [base]
       elsif from == :current
         [current_directory(location)]
       elsif from == :local_root
         [@root_directories.last]
-      else
+      elsif from == :root
         @root_directories
+      else
+        [from]
       end
     end
 
