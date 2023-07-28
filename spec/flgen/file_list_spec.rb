@@ -140,6 +140,41 @@ RSpec.describe FLGen::FileList do
       end
     end
 
+    specify '#default_search_pathでfrom:未指定時の挙動を変更できる' do
+      file_list = described_class.new(context, path)
+
+      context.loaded_file_lists.clear
+      setup_expectation(root_directories[0], list_name)
+      file_list.default_search_path(file_list: :root)
+      file_list.file_list(list_name)
+
+      context.loaded_file_lists.clear
+      setup_expectation(root_directories.last, list_name)
+      file_list.default_search_path(file_list: :local_root)
+      file_list.file_list(list_name)
+
+      context.loaded_file_lists.clear
+      setup_expectation(root_directories.last, list_name)
+      file_list.default_search_path(file_list: :local_root)
+      file_list.file_list(list_name)
+
+      context.loaded_file_lists.clear
+      setup_expectation(__dir__, list_name)
+      file_list.default_search_path(file_list: :current)
+      file_list.file_list(list_name)
+
+      context.loaded_file_lists.clear
+      base = non_root_directories.sample
+      setup_expectation(base, list_name)
+      file_list.default_search_path(file_list: base)
+      file_list.file_list(list_name)
+
+      context.loaded_file_lists.clear
+      setup_expectation(root_directories[1], list_name, root_directories[0])
+      file_list.reset_default_search_path(:file_list)
+      file_list.file_list(list_name)
+    end
+
     context '複数回同じファイルリストが指定された場合' do
       specify '２回目以降は読み込まない' do
         file_list = described_class.new(context, path)
@@ -272,11 +307,32 @@ RSpec.describe FLGen::FileList do
         file_list.source_file(source_file_name, from: base)
       end
     end
-=begin
+
     specify '#default_search_pathでfrom:未指定時の挙動を変更できる' do
       file_list = described_class.new(context, path)
+
+      setup_expectation(root_directories[0], source_file_name)
+      file_list.default_search_path(source_file: :root)
+      file_list.source_file(source_file_name)
+
+      setup_expectation(root_directories.last, source_file_name)
+      file_list.default_search_path(source_file: :local_root)
+      file_list.source_file(source_file_name)
+
+      setup_expectation(__dir__, source_file_name)
+      file_list.default_search_path(source_file: :current)
+      file_list.source_file(source_file_name)
+
+      base = non_root_directories.sample
+      setup_expectation(base, source_file_name)
+      file_list.default_search_path(source_file: base)
+      file_list.source_file(source_file_name)
+
+      setup_expectation(__dir__, source_file_name)
+      file_list.reset_default_search_path(:source_file)
+      file_list.source_file(source_file_name)
     end
-=end
+
     context '指定したソースファイルが存在しない場合' do
       it 'LoadErrorを起こす' do
         file_list = described_class.new(context, path)
@@ -390,6 +446,31 @@ RSpec.describe FLGen::FileList do
         setup_expectation(base, library_file_name)
         file_list.library_file(library_file_name, from: base)
       end
+    end
+
+    specify '#default_search_pathでfrom:未指定時の挙動を変更できる' do
+      file_list = described_class.new(context, path)
+
+      setup_expectation(root_directories[0], library_file_name)
+      file_list.default_search_path(library_file: :root)
+      file_list.library_file(library_file_name)
+
+      setup_expectation(root_directories.last, library_file_name)
+      file_list.default_search_path(library_file: :local_root)
+      file_list.library_file(library_file_name)
+
+      setup_expectation(__dir__, library_file_name)
+      file_list.default_search_path(library_file: :current)
+      file_list.library_file(library_file_name)
+
+      base = non_root_directories.sample
+      setup_expectation(base, library_file_name)
+      file_list.default_search_path(library_file: base)
+      file_list.library_file(library_file_name)
+
+      setup_expectation(__dir__, library_file_name)
+      file_list.reset_default_search_path(:library_file)
+      file_list.library_file(library_file_name)
     end
 
     context '指定したライブラリファイルが存在しない場合' do
@@ -551,6 +632,31 @@ RSpec.describe FLGen::FileList do
       end
     end
 
+    specify '#default_search_pathでfrom:未指定時の挙動を変更できる' do
+      file_list = described_class.new(context, path)
+
+      setup_expectation(root_directories[0], include_directories[0])
+      file_list.default_search_path(include_directory: :root)
+      file_list.include_directory(include_directories[0])
+
+      setup_expectation(root_directories.last, include_directories[0])
+      file_list.default_search_path(include_directory: :local_root)
+      file_list.include_directory(include_directories[0])
+
+      setup_expectation(__dir__, include_directories[0])
+      file_list.default_search_path(include_directory: :current)
+      file_list.include_directory(include_directories[0])
+
+      base = non_root_directories.sample
+      setup_expectation(base, include_directories[0])
+      file_list.default_search_path(include_directory: base)
+      file_list.include_directory(include_directories[0])
+
+      setup_expectation(__dir__, include_directories[0])
+      file_list.reset_default_search_path(:include_directory)
+      file_list.include_directory(include_directories[0])
+    end
+
     context '指定したディレクトリが存在しない場合' do
       it 'NoEntryErrorを起こす' do
         file_list = described_class.new(context, path)
@@ -670,6 +776,31 @@ RSpec.describe FLGen::FileList do
         file_list.library_directory(library_directories[0], from: base)
         file_list.library_directory(library_directories[1], from: base)
       end
+    end
+
+    specify '#default_search_pathでfrom:未指定時の挙動を変更できる' do
+      file_list = described_class.new(context, path)
+
+      setup_expectation(root_directories[0], library_directories[0])
+      file_list.default_search_path(library_directory: :root)
+      file_list.library_directory(library_directories[0])
+
+      setup_expectation(root_directories.last, library_directories[0])
+      file_list.default_search_path(library_directory: :local_root)
+      file_list.library_directory(library_directories[0])
+
+      setup_expectation(__dir__, library_directories[0])
+      file_list.default_search_path(library_directory: :current)
+      file_list.library_directory(library_directories[0])
+
+      base = non_root_directories.sample
+      setup_expectation(base, library_directories[0])
+      file_list.default_search_path(library_directory: base)
+      file_list.library_directory(library_directories[0])
+
+      setup_expectation(__dir__, library_directories[0])
+      file_list.reset_default_search_path(:library_directory)
+      file_list.library_directory(library_directories[0])
     end
 
     context '指定したディレクトリが存在しない場合' do

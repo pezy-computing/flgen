@@ -6,21 +6,30 @@ module FLGen
       @context = context
       @path = path
       @root_directories = extract_root
+      @default_search_path = {}
     end
 
-    def file_list(path, from: :root, raise_error: true)
+    def default_search_path(**seach_paths)
+      @default_search_path.update(seach_paths)
+    end
+
+    def reset_default_search_path(*target_types)
+      target_types.each { |type| @default_search_path.delete(type) }
+    end
+
+    def file_list(path, from: nil, raise_error: true)
       location = caller_location
       load_file_list(path, from, location, raise_error)
     end
 
-    def source_file(path, from: :current, raise_error: true)
+    def source_file(path, from: nil, raise_error: true)
       location = caller_location
-      add_file_entry(path, from, location, raise_error, :add_source_file)
+      add_file_entry(path, from, location, raise_error, :source_file)
     end
 
-    def library_file(path, from: :current, raise_error: true)
+    def library_file(path, from: nil, raise_error: true)
       location = caller_location
-      add_file_entry(path, from, location, raise_error, :add_library_file)
+      add_file_entry(path, from, location, raise_error, :library_file)
     end
 
     def define_macro(macro, value = nil)
@@ -33,24 +42,24 @@ module FLGen
 
     alias_method :macro_defined?, :macro?
 
-    def include_directory(path, from: :current, raise_error: true)
+    def include_directory(path, from: nil, raise_error: true)
       location = caller_location
-      add_directory_entry(path, from, location, raise_error, :add_include_directory)
+      add_directory_entry(path, from, location, raise_error, :include_directory)
     end
 
-    def library_directory(path, from: :current, raise_error: true)
+    def library_directory(path, from: nil, raise_error: true)
       location = caller_location
-      add_directory_entry(path, from, location, raise_error, :add_library_directory)
+      add_directory_entry(path, from, location, raise_error, :library_directory)
     end
 
     def file?(path, from: :current)
       location = caller_location
-      !extract_file_path(path, from, location).nil?
+      !extract_file_path(path, from, location, :file).nil?
     end
 
     def directory?(path, from: :current)
       location = caller_location
-      !extract_directory_path(path, from, location).nil?
+      !extract_directory_path(path, from, location, :directory).nil?
     end
 
     def env?(name)
@@ -92,7 +101,7 @@ module FLGen
     end
 
     def load_file_list(path, from, location, raise_error)
-      unless (list_path = extract_file_path(path, from, location))
+      unless (list_path = extract_file_path(path, from, location, :file_list))
         raise_no_entry_error(path, location, raise_error)
         return
       end
@@ -110,21 +119,23 @@ module FLGen
       @context.loaded_file_lists.include?(path)
     end
 
-    def add_file_entry(path, from, location, raise_error, method)
-      unless (file_path = extract_file_path(path, from, location))
+    def add_file_entry(path, from, location, raise_error, type)
+      unless (file_path = extract_file_path(path, from, location, type))
         raise_no_entry_error(path, location, raise_error)
         return
       end
 
+      method = "add_#{type}".to_sym
       @context.__send__(method, file_path)
     end
 
-    def add_directory_entry(path, from, location, raise_error, method)
-      unless (directory_path = extract_directory_path(path, from, location))
+    def add_directory_entry(path, from, location, raise_error, type)
+      unless (directory_path = extract_directory_path(path, from, location, type))
         raise_no_entry_error(path, location, raise_error)
         return
       end
 
+      method = "add_#{type}".to_sym
       @context.__send__(method, directory_path)
     end
 
@@ -132,31 +143,37 @@ module FLGen
       caller_locations(2, 1).first
     end
 
-    def extract_file_path(path, from, location)
-      extract_path(path, from, location, :file?)
+    def extract_file_path(path, from, location, type)
+      extract_path(path, from, location, type, :file?)
     end
 
-    def extract_directory_path(path, from, location)
-      extract_path(path, from, location, :directory?)
+    def extract_directory_path(path, from, location, type)
+      extract_path(path, from, location, type, :directory?)
     end
 
-    def extract_path(path, from, location, checker)
-      search_root(path, from, location)
+    def extract_path(path, from, location, type, checker)
+      search_root(path, from, location, type)
         .map { |root| File.expand_path(path, root) }
         .find { |abs_path| File.__send__(checker, abs_path) && abs_path }
     end
 
-    def search_root(path, from, location)
+    DEFAULT_SEARCH_PATH = {
+      file_list: :root, source_file: :current, library_file: :current, file: :current,
+      include_directory: :current, library_directory: :current, directory: :current
+    }.freeze
+
+    def search_root(path, from, location, type)
+      search_path = from || @default_search_path[type] || DEFAULT_SEARCH_PATH[type]
       if absolute_path?(path)
         ['']
-      elsif from == :current
+      elsif search_path == :current
         [current_directory(location)]
-      elsif from == :local_root
+      elsif search_path == :local_root
         [@root_directories.last]
-      elsif from == :root
+      elsif search_path == :root
         @root_directories
       else
-        [from]
+        [search_path]
       end
     end
 
