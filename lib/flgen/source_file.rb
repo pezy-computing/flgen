@@ -2,8 +2,8 @@
 
 module FLGen
   class SourceFile
-    def initialize(root, path, checksum = nil)
-      @path = File.join(root, path)
+    def initialize(path, checksum = nil)
+      @path = path
       @checksum = checksum
     end
 
@@ -27,8 +27,8 @@ module FLGen
     def remove_ext(ext_list)
       return self unless match_ext?(ext_list)
 
-      path = Pathname.new(@path).sub_ext('').to_s
-      self.class.new('', path, checksum)
+      path_no_ext = Pathname.new(path).sub_ext('').to_s
+      self.class.new(path_no_ext, checksum)
     end
 
     def checksum

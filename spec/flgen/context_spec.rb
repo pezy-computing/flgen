@@ -39,8 +39,8 @@ RSpec.describe FLGen::Context do
       allow(File).to receive(:read).with('/foo/bar/hoge.sv').and_return(file_contents[0])
       allow(File).to receive(:read).with('/baz/qux/fuga.sv').and_return(file_contents[1])
 
-      context.add_source_file('/foo', 'bar/hoge.sv')
-      context.add_source_file('/baz/qux', 'fuga.sv')
+      context.add_source_file('/foo/bar/hoge.sv')
+      context.add_source_file('/baz/qux/fuga.sv')
 
       expect(context.source_files).to match([
         match_source_file('/foo/bar/hoge.sv'),
@@ -53,8 +53,8 @@ RSpec.describe FLGen::Context do
         options[:runtime] = true
 
         expect {
-          context.add_source_file('/foo', 'bar/hoge.sv')
-          context.add_source_file('/baz/qux', 'fuga.sv')
+          context.add_source_file('/foo/bar/hoge.sv')
+          context.add_source_file('/baz/qux/fuga.sv')
         }.not_to change { context.source_files.size }
       end
     end
@@ -66,10 +66,10 @@ RSpec.describe FLGen::Context do
         allow(File).to receive(:read).with('/foo/bar/hoge.sv.gz').and_return(file_contents[0])
         allow(File).to receive(:read).with('/foo/bar/fuga.sv.bz2').and_return(file_contents[1])
 
-        context.add_source_file('/foo/bar', 'hoge.sv.gz')
-        context.add_source_file('/foo/bar', 'hoge.sv')
-        context.add_source_file('/foo/bar', 'fuga.sv.bz2')
-        context.add_source_file('/foo/bar', 'fuga.sv')
+        context.add_source_file('/foo/bar/hoge.sv.gz')
+        context.add_source_file('/foo/bar/hoge.sv')
+        context.add_source_file('/foo/bar/fuga.sv.bz2')
+        context.add_source_file('/foo/bar/fuga.sv')
 
         expect(context.source_files).to match([
           match_source_file('/foo/bar/hoge.sv.gz'),
@@ -86,9 +86,9 @@ RSpec.describe FLGen::Context do
         allow(File).to receive(:read).with('/foo/bar/fuga.sv.bz2').and_return(file_contents[1])
         allow(File).to receive(:read).with('/foo/bar/piyo.sv').and_return(file_contents[2])
 
-        context.add_source_file('/foo/bar', 'hoge.sv.gz')
-        context.add_source_file('/foo/bar', 'fuga.sv.bz2')
-        context.add_source_file('/foo/bar', 'piyo.sv')
+        context.add_source_file('/foo/bar/hoge.sv.gz')
+        context.add_source_file('/foo/bar/fuga.sv.bz2')
+        context.add_source_file('/foo/bar/piyo.sv')
 
         expect(context.source_files).to match([
           match_source_file('/foo/bar/hoge.sv'),
@@ -106,11 +106,11 @@ RSpec.describe FLGen::Context do
         allow(File).to receive(:read).with('/baz/qux/fizz/buzz/fuga.sv').and_return(file_contents[2])
         allow(File).to receive(:read).with('/foo/bar/fizz/buzz/hoge.sv').and_return(file_contents[0])
 
-        context.add_source_file('/foo/bar', 'fizz/buzz/hoge.sv')
-        context.add_source_file('/foo/bar', 'fizz/buzz/fuga.sv')
-        context.add_source_file('/baz/qux', 'fizz/buzz/hoge.sv')
-        context.add_source_file('/baz/qux', 'fizz/buzz/fuga.sv')
-        context.add_source_file(''        , '/foo/bar/fizz/buzz/hoge.sv')
+        context.add_source_file('/foo/bar/fizz/buzz/hoge.sv')
+        context.add_source_file('/foo/bar/fizz/buzz/fuga.sv')
+        context.add_source_file('/baz/qux/fizz/buzz/hoge.sv')
+        context.add_source_file('/baz/qux/fizz/buzz/fuga.sv')
+        context.add_source_file('/foo/bar/fizz/buzz/hoge.sv')
 
         expect(context.source_files).to match([
           match_source_file('/foo/bar/fizz/buzz/hoge.sv'),
@@ -143,8 +143,8 @@ RSpec.describe FLGen::Context do
       allow(File).to receive(:read).with('/foo/bar/hoge.sv').and_return(file_contents[0])
       allow(File).to receive(:read).with('/baz/qux/fuga.sv').and_return(file_contents[1])
 
-      context.add_library_file('/foo', 'bar/hoge.sv')
-      context.add_library_file('/baz/qux', 'fuga.sv')
+      context.add_library_file('/foo/bar/hoge.sv')
+      context.add_library_file('/baz/qux/fuga.sv')
 
       expect(context.arguments).to match([
         match_argument(:library_file, path: match_source_file('/foo/bar/hoge.sv')),
@@ -157,8 +157,8 @@ RSpec.describe FLGen::Context do
         options[:runtime] = true
 
         expect {
-          context.add_library_file('/foo', 'bar/hoge.sv')
-          context.add_library_file('/baz/qux', 'fuga.sv')
+          context.add_library_file('/foo/bar/hoge.sv')
+          context.add_library_file('/baz/qux/fuga.sv')
         }.not_to change { context.arguments.size }
       end
     end
@@ -171,11 +171,11 @@ RSpec.describe FLGen::Context do
         allow(File).to receive(:read).with('/baz/qux/fizz/buzz/fuga.sv').and_return(file_contents[2])
         allow(File).to receive(:read).with('/foo/bar/fizz/buzz/hoge.sv').and_return(file_contents[0])
 
-        context.add_library_file('/foo/bar', 'fizz/buzz/hoge.sv')
-        context.add_library_file('/foo/bar', 'fizz/buzz/fuga.sv')
-        context.add_library_file('/baz/qux', 'fizz/buzz/hoge.sv')
-        context.add_library_file('/baz/qux', 'fizz/buzz/fuga.sv')
-        context.add_library_file(''        , '/foo/bar/fizz/buzz/hoge.sv')
+        context.add_library_file('/foo/bar/fizz/buzz/hoge.sv')
+        context.add_library_file('/foo/bar/fizz/buzz/fuga.sv')
+        context.add_library_file('/baz/qux/fizz/buzz/hoge.sv')
+        context.add_library_file('/baz/qux/fizz/buzz/fuga.sv')
+        context.add_library_file('/foo/bar/fizz/buzz/hoge.sv')
 
         expect(context.arguments).to match([
           match_argument(:library_file, path: match_source_file('/foo/bar/fizz/buzz/hoge.sv')),

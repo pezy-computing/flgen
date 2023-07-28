@@ -12,18 +12,18 @@ module FLGen
       @source_files ||= []
     end
 
-    def add_source_file(root, path)
+    def add_source_file(path)
       return if runtime?
 
-      file = SourceFile.new(root, path)
+      file = SourceFile.new(path)
       add_source_file?(file) &&
         (source_files << file.remove_ext(@options[:rm_ext]))
     end
 
-    def add_library_file(root, path)
+    def add_library_file(path)
       return if runtime?
 
-      file = SourceFile.new(root, path)
+      file = SourceFile.new(path)
       add_library_file?(file) &&
         add_compile_argument(Arguments::LibraryFile.new(file))
     end
