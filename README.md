@@ -24,23 +24,23 @@ $ gem install flgen
 
 FLGen prives APIs listed below to describe your filelists.
 
-* `source_file(path, from: :current, base: nil)`
+* `source_file(path, from: nil)`
     * Add the given source file to the current filelist.
-* `file_list(path, from: :root, base: nil)`
+* `file_list(path, from: nil)`
     * Load the given filelist.
-* `library_file(path, from: :current, base: nil)`
+* `library_file(path, from: nil)`
     * Add the given file to the list of library files.
-* `include_directory(path, from: :current, base: nil)`
+* `include_directory(path, from: nil)`
     * Add the given directory to the list of include direcotries.
-* `library_directory(path, from: :current, base: nil)`
+* `library_directory(path, from: nil)`
     * Add the given directory to the list of library directories.
 * `define_macro(name, value = nil)`
     * Define a text macro.
 * `macro?(name)`/`macro_defined?(name)`
     * Return `true` if the given macro is defined.
-* `file?(path, from: :current, base: nil)`
+* `file?(path, from: :current)`
     * Return `treu` if the given file exists.
-* `directory?(path, from: :current, base: nil)`
+* `directory?(path, from: :current)`
     * Return `true` if the given directory exists.
 * `env?(name)`
     * Return `true` if the givne environment variable is defined.
@@ -54,6 +54,10 @@ FLGen prives APIs listed below to describe your filelists.
     * If `tool` is specified the given argument is added only when `tool` is matched with the targe tool.
 * `target_tool?(tool)`
     * Return `true` if the given tool is matched with the targe tool.
+* `default_search_path(**seach_paths)`
+    * Change the default behavior when the `from` argument is not specified.
+* `reset_default_search_path(*target_types)`
+    * Reset the default behavior when the `from` argument is not specified.
 
 FLGen's filelist is designed as an inernal DSL with Ruby. Therefore you can use Ruby's syntax. For example:
 
@@ -65,10 +69,12 @@ else
 end
 ```
 
-### About `from`/`base` arguments
+### About the `from` argument
 
 The `from` argument is to specify how to search the given file or directory. You can specify one of three below.
 
+* a directory path
+    * Seach the given file or directory from the directory path specified by the `from` argument.
 * `:current`
     * Search the given file or directory from the directory where the current filelist is.
 * `:root`
@@ -78,9 +84,31 @@ The `from` argument is to specify how to search the given file or directory. You
 * `:local_root`
     * Search the given file or directory from the repository root directory where the current filelist belongs to.
 
-The `from` argument is ignored if the given path is an absolute path or the `base` argument is specified.
+Default behaviors when the `from` argument is not spcified are listed below:
 
-The `base` argument is to specify the serach direcotry for the given file or directory.
+* `source_file`
+    * `:current`
+* `file_list`
+    * `:root`
+* `library_file`
+    * `:current`
+* `include_directory`
+    * `:current`
+* `library_directory`
+    * `:current`
+
+You can change the above default behaviors by using the `default_search_path` API.
+In addition, you can reset the default behaviors by using the `reset_default_search_path` API.
+
+```ruby
+default_seach_path source_file: :root, file_list: :current
+source_file 'foo.sv'    # FLGen will search the 'foo.sv' file from the root directories.
+file_list 'bar.list.rb' # FLGen will eaarch the 'bar.list.rb' file from the directory where this file list is.
+
+reset_default_search_path :source_file, :file_list
+source_file 'baz.sv'    # FLGen will search the 'baz.sv' file from the directory where this file list is.
+file_list 'qux.list.rb' # FLGen will eaarch the 'qux.list.rb' file from  the root directories.
+```
 
 #### Example
 
