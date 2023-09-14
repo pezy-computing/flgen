@@ -89,11 +89,7 @@ module FLGen
       return nil if @path.empty?
 
       Pathname
-        .new(@path)
-        .dirname
-        .descend
-        .select(&method(:repository_root?))
-        .map(&:to_s)
+        .new(@path).dirname.descend.select(&method(:repository_root?)).map(&:to_s)
     end
 
     def repository_root?(path)
@@ -157,6 +153,8 @@ module FLGen
         .find { |abs_path| File.__send__(checker, abs_path) && abs_path }
     end
 
+    FROM_KEYWORDS = [:cwd, :current, :local_root, :root].freeze
+
     DEFAULT_SEARCH_PATH = {
       file_list: :root, source_file: :current, library_file: :current, file: :current,
       include_directory: :current, library_directory: :current, directory: :current
@@ -166,12 +164,8 @@ module FLGen
       search_path = from || @default_search_path[type] || DEFAULT_SEARCH_PATH[type]
       if absolute_path?(path)
         ['']
-      elsif search_path == :current
-        [current_directory(location)]
-      elsif search_path == :local_root
-        [@root_directories.last]
-      elsif search_path == :root
-        @root_directories
+      elsif FROM_KEYWORDS.include?(search_path)
+        search_root_specified_by_keyword(search_path, location)
       else
         [search_path]
       end
@@ -179,6 +173,15 @@ module FLGen
 
     def absolute_path?(path)
       Pathname.new(path).absolute?
+    end
+
+    def search_root_specified_by_keyword(from_keyword, location)
+      case from_keyword
+      when :cwd then [Dir.pwd]
+      when :current then [current_directory(location)]
+      when :local_root then [@root_directories.last]
+      else @root_directories
+      end
     end
 
     def current_directory(location)
