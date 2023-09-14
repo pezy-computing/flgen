@@ -54,7 +54,7 @@ FLGen prives APIs listed below to describe your filelists.
     * If `tool` is specified the given argument is added only when `tool` is matched with the targe tool.
 * `target_tool?(tool)`
     * Return `true` if the given tool is matched with the targe tool.
-* `default_search_path(**seach_paths)`
+* `default_search_path(**search_paths)`
     * Change the default behavior when the `from` argument is not specified.
 * `reset_default_search_path(*target_types)`
     * Reset the default behavior when the `from` argument is not specified.
@@ -74,7 +74,9 @@ end
 The `from` argument is to specify how to search the given file or directory. You can specify one of three below.
 
 * a directory path
-    * Seach the given file or directory from the directory path specified by the `from` argument.
+    * Search the given file or directory from the directory path specified by the `from` argument.
+* `:cwd`
+    * Search the given file or directory from the current working directory.
 * `:current`
     * Search the given file or directory from the directory where the current filelist is.
 * `:root`
@@ -86,22 +88,20 @@ The `from` argument is to specify how to search the given file or directory. You
 
 Default behaviors when the `from` argument is not spcified are listed below:
 
-* `source_file`
-    * `:current`
-* `file_list`
-    * `:root`
-* `library_file`
-    * `:current`
-* `include_directory`
-    * `:current`
-* `library_directory`
-    * `:current`
+
+| API name          | Default `from` argument |
+|:------------------|:------------------------|
+| source_file       | :current                |
+| file_list         | :root                   |
+| library_file      | :current                |
+| include_directory | :current                |
+| library_directory | :current                |
 
 You can change the above default behaviors by using the `default_search_path` API.
 In addition, you can reset the default behaviors by using the `reset_default_search_path` API.
 
 ```ruby
-default_seach_path source_file: :root, file_list: :current
+default_search_path source_file: :root, file_list: :current
 source_file 'foo.sv'    # FLGen will search the 'foo.sv' file from the root directories.
 file_list 'bar.list.rb' # FLGen will eaarch the 'bar.list.rb' file from the directory where this file list is.
 

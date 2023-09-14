@@ -45,6 +45,10 @@ RSpec.describe FLGen::FileList do
     allow(File).to receive(:realpath) { |path| path }
   end
 
+  def mock_cwd
+    allow(Dir).to receive(:pwd).and_return(__dir__)
+  end
+
   describe '#file_list' do
     let(:list_name) do
       'hoge/fuga.rb'
@@ -130,6 +134,16 @@ RSpec.describe FLGen::FileList do
       end
     end
 
+    context 'from: :cwdが指定された場合' do
+      it '実行ディレクトリを起点として、指定されたファイルリストを読み出す' do
+        file_list = described_class.new(context, path)
+
+        mock_cwd
+        setup_expectation(__dir__, list_name)
+        file_list.file_list(list_name, from: :cwd)
+      end
+    end
+
     context 'from: でベースディレクトリが指定された場合' do
       it '指定されたファイルリストをベースディレクトリから読み出す' do
         base = non_root_directories.sample
@@ -161,6 +175,12 @@ RSpec.describe FLGen::FileList do
       context.loaded_file_lists.clear
       setup_expectation(__dir__, list_name)
       file_list.default_search_path(file_list: :current)
+      file_list.file_list(list_name)
+
+      mock_cwd
+      context.loaded_file_lists.clear
+      setup_expectation(__dir__, list_name)
+      file_list.default_search_path(file_list: :cwd)
       file_list.file_list(list_name)
 
       context.loaded_file_lists.clear
@@ -298,6 +318,16 @@ RSpec.describe FLGen::FileList do
       end
     end
 
+    context 'from: :cwdが指定された場合' do
+      it '実行ディレクトリを起点として、contextにソースファイルを追加する' do
+        file_list = described_class.new(context, path)
+
+        mock_cwd
+        setup_expectation(__dir__, source_file_name)
+        file_list.source_file(source_file_name, from: :cwd)
+      end
+    end
+
     context 'from:でベースディレクトリが指定された場合' do
       it '指定されたベースディレクトリから、contextにソースファイルを追加する' do
         file_list = described_class.new(context, path)
@@ -321,6 +351,11 @@ RSpec.describe FLGen::FileList do
 
       setup_expectation(__dir__, source_file_name)
       file_list.default_search_path(source_file: :current)
+      file_list.source_file(source_file_name)
+
+      mock_cwd
+      setup_expectation(__dir__, source_file_name)
+      file_list.default_search_path(source_file: :cwd)
       file_list.source_file(source_file_name)
 
       base = non_root_directories.sample
@@ -438,6 +473,16 @@ RSpec.describe FLGen::FileList do
       end
     end
 
+    context 'from: cwdが指定された場合' do
+      it '実行ディレクトリを起点として、contextにライブラリファイルを追加する' do
+        file_list = described_class.new(context, path)
+
+        mock_cwd
+        setup_expectation(__dir__, library_file_name)
+        file_list.library_file(library_file_name, from: :cwd)
+      end
+    end
+
     context 'from:でベースディレクトリが指定された場合' do
       it '指定されたベースディレクトリから、contextにライブラリファイルを追加する' do
         file_list = described_class.new(context, path)
@@ -461,6 +506,11 @@ RSpec.describe FLGen::FileList do
 
       setup_expectation(__dir__, library_file_name)
       file_list.default_search_path(library_file: :current)
+      file_list.library_file(library_file_name)
+
+      mock_cwd
+      setup_expectation(__dir__, library_file_name)
+      file_list.default_search_path(library_file: :cwd)
       file_list.library_file(library_file_name)
 
       base = non_root_directories.sample
@@ -620,6 +670,18 @@ RSpec.describe FLGen::FileList do
       end
     end
 
+    context 'from: :cwdが指定された場合' do
+      it '実行ディレクトリを起点に、指定されたディレクトリをcontextに追加する' do
+        file_list = described_class.new(context, path)
+
+        mock_cwd
+        setup_expectation(__dir__, include_directories[0])
+        setup_expectation(__dir__, include_directories[1])
+        file_list.include_directory(include_directories[0], from: :cwd)
+        file_list.include_directory(include_directories[1], from: :cwd)
+      end
+    end
+
     context 'from:でベースディレクトリが指定された場合' do
       it 'ベースディレクトリから、指定されたディレクトリをcontextに追加する' do
         file_list = described_class.new(context, path)
@@ -645,6 +707,11 @@ RSpec.describe FLGen::FileList do
 
       setup_expectation(__dir__, include_directories[0])
       file_list.default_search_path(include_directory: :current)
+      file_list.include_directory(include_directories[0])
+
+      mock_cwd
+      setup_expectation(__dir__, include_directories[0])
+      file_list.default_search_path(include_directory: :cwd)
       file_list.include_directory(include_directories[0])
 
       base = non_root_directories.sample
@@ -766,6 +833,18 @@ RSpec.describe FLGen::FileList do
       end
     end
 
+    context 'from: :cwdが指定された場合' do
+      it '実行ディレクトリ起点に、指定されたディレクトリをcontextに追加する' do
+        file_list = described_class.new(context, path)
+
+        mock_cwd
+        setup_expectation(__dir__, library_directories[0])
+        setup_expectation(__dir__, library_directories[1])
+        file_list.library_directory(library_directories[0], from: :cwd)
+        file_list.library_directory(library_directories[1], from: :cwd)
+      end
+    end
+
     context 'from:でベースディレクトリが指定された場合' do
       it 'ベースディレクトリから、指定されたディレクトリをcontextに追加する' do
         file_list = described_class.new(context, path)
@@ -791,6 +870,11 @@ RSpec.describe FLGen::FileList do
 
       setup_expectation(__dir__, library_directories[0])
       file_list.default_search_path(library_directory: :current)
+      file_list.library_directory(library_directories[0])
+
+      mock_cwd
+      setup_expectation(__dir__, library_directories[0])
+      file_list.default_search_path(library_directory: :cwd)
       file_list.library_directory(library_directories[0])
 
       base = non_root_directories.sample
@@ -908,6 +992,20 @@ RSpec.describe FLGen::FileList do
       end
     end
 
+    context 'from: :cwdが指定された場合' do
+      it '実行ディレクトリを起点として、指定されたファイルの有無を返す' do
+        file_list = described_class.new(context, path)
+
+        mock_cwd
+        allow(File).to receive(:file?).with(File.join(__dir__, file_names[0])).and_return(true)
+        expect(file_list.file?(file_names[0], from: :cwd)).to eq true
+
+        mock_cwd
+        allow(File).to receive(:file?).with(File.join(__dir__, file_names[1])).and_return(false)
+        expect(file_list.file?(file_names[1], from: :cwd)).to eq false
+      end
+    end
+
     context 'from:でベースディレクトリが指定された場合' do
       it 'ベースディレクトリを起点として、指定されたファイルの有無を返す' do
         file_list = described_class.new(context, path)
@@ -989,6 +1087,20 @@ RSpec.describe FLGen::FileList do
 
         allow(File).to receive(:directory?).with(File.join(__dir__, directory_names[1])).and_return(false)
         expect(file_list.directory?(directory_names[1], from: :current)).to eq false
+      end
+    end
+
+    context 'from: :cwdが指定された場合' do
+      it '実行ディレクトリを起点として、指定されたディレクトリの有無を返す' do
+        file_list = described_class.new(context, path)
+
+        mock_cwd
+        allow(File).to receive(:directory?).with(File.join(__dir__, directory_names[0])).and_return(true)
+        expect(file_list.directory?(directory_names[0], from: :cwd)).to eq true
+
+        mock_cwd
+        allow(File).to receive(:directory?).with(File.join(__dir__, directory_names[1])).and_return(false)
+        expect(file_list.directory?(directory_names[1], from: :cwd)).to eq false
       end
     end
 
