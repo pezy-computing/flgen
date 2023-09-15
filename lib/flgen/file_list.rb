@@ -18,19 +18,31 @@ module FLGen
     end
 
     def file_list(path, from: nil, raise_error: true)
-      location = caller_location
-      load_file_list(path, from, location, raise_error)
+      load_file_list(path, from, raise_error, caller_location)
     end
 
     def source_file(path, from: nil, raise_error: true)
-      location = caller_location
-      add_file_entry(path, from, location, raise_error, :source_file)
+      add_entry(path, from, raise_error, __callee__, caller_location)
     end
 
-    def library_file(path, from: nil, raise_error: true)
-      location = caller_location
-      add_file_entry(path, from, location, raise_error, :library_file)
+    define_method(:library_file, instance_method(:source_file))
+    define_method(:include_directory, instance_method(:source_file))
+    define_method(:library_directory, instance_method(:source_file))
+
+    def find_files(*patterns, from: nil, &block)
+      glob_files(patterns, from, __callee__, caller_location)
+        .then { |e| block ? e.each(&block) : e.to_a }
     end
+
+    def find_file(*patterns, from: nil)
+      glob_files(patterns, from, __callee__, caller_location).first
+    end
+
+    def file?(path, from: :current)
+      !extract_path(path, from, __callee__, caller_location).nil?
+    end
+
+    define_method(:directory?, instance_method(:file?))
 
     def define_macro(macro, value = nil)
       @context.define_macro(macro, value)
@@ -41,37 +53,6 @@ module FLGen
     end
 
     alias_method :macro_defined?, :macro?
-
-    def include_directory(path, from: nil, raise_error: true)
-      location = caller_location
-      add_directory_entry(path, from, location, raise_error, :include_directory)
-    end
-
-    def library_directory(path, from: nil, raise_error: true)
-      location = caller_location
-      add_directory_entry(path, from, location, raise_error, :library_directory)
-    end
-
-    def find_files(*patterns, from: nil, &block)
-      location = caller_location
-      glob_files(patterns, __method__, from, location)
-        .then { |e| block ? e.each(&block) : e.to_a }
-    end
-
-    def find_file(*patterns, from: nil)
-      location = caller_location
-      glob_files(patterns, __method__, from, location).first
-    end
-
-    def file?(path, from: :current)
-      location = caller_location
-      !extract_file_path(path, from, location, :file).nil?
-    end
-
-    def directory?(path, from: :current)
-      location = caller_location
-      !extract_directory_path(path, from, location, :directory).nil?
-    end
 
     def env?(name)
       ENV.key?(name.to_s)
@@ -111,14 +92,14 @@ module FLGen
       Hash.new { |_, key| key == :file_list ? :root : :current }
     end
 
-    def load_file_list(path, from, location, raise_error)
-      unless (list_path = extract_file_path(path, from, location, :file_list))
+    def load_file_list(path, from, raise_error, location)
+      unless (extracted_path = extract_path(path, from, :file_list, location))
         raise_no_entry_error(path, location, raise_error)
         return
       end
 
       # Need to File.realpath to resolve symblic link
-      list_path = File.realpath(list_path)
+      list_path = File.realpath(extracted_path)
       file_list_already_loaded?(list_path) && return
 
       @context.loaded_file_lists << list_path
@@ -130,28 +111,23 @@ module FLGen
       @context.loaded_file_lists.include?(path)
     end
 
-    def add_file_entry(path, from, location, raise_error, type)
-      unless (file_path = extract_file_path(path, from, location, type))
+    def add_entry(path, from, raise_error, method_name, location)
+      unless (extracted_path = extract_path(path, from, method_name, location))
         raise_no_entry_error(path, location, raise_error)
         return
       end
 
-      method = "add_#{type}".to_sym
-      @context.__send__(method, file_path)
+      @context.__send__("add_#{method_name}".to_sym, extracted_path)
     end
 
-    def add_directory_entry(path, from, location, raise_error, type)
-      unless (directory_path = extract_directory_path(path, from, location, type))
-        raise_no_entry_error(path, location, raise_error)
-        return
-      end
+    def raise_no_entry_error(path, location, raise_error)
+      return unless raise_error
 
-      method = "add_#{type}".to_sym
-      @context.__send__(method, directory_path)
+      raise NoEntryError.new(path, location)
     end
 
-    def glob_files(patterns, method_name, from, location)
-      patterns.product(search_root('', from, location, method_name))
+    def glob_files(patterns, from, method_name, location)
+      patterns.product(search_root('', from, method_name, location))
         .lazy.flat_map { |patten, base| do_glob_files(patten, base) }
     end
 
@@ -165,24 +141,16 @@ module FLGen
       caller_locations(2, 1).first
     end
 
-    def extract_file_path(path, from, location, type)
-      extract_path(path, from, location, type, :file?)
-    end
-
-    def extract_directory_path(path, from, location, type)
-      extract_path(path, from, location, type, :directory?)
-    end
-
-    def extract_path(path, from, location, type, checker)
-      search_root(path, from, location, type)
+    def extract_path(path, from, method_name, location)
+      search_root(path, from, method_name, location)
         .map { |root| File.expand_path(path, root) }
-        .find { |abs_path| File.__send__(checker, abs_path) && abs_path }
+        .find { |abs_path| exist_path?(abs_path, method_name) }
     end
 
     FROM_KEYWORDS = [:cwd, :current, :local_root, :root].freeze
 
-    def search_root(path, from, location, type)
-      search_path = from || @default_search_path[type]
+    def search_root(path, from, method_name, location)
+      search_path = from || @default_search_path[method_name]
       if absolute_path?(path)
         ['']
       elsif FROM_KEYWORDS.include?(search_path)
@@ -213,10 +181,15 @@ module FLGen
       File.dirname(path)
     end
 
-    def raise_no_entry_error(path, location, raise_error)
-      return unless raise_error
+    METHODS_TARGETING_DIRECTORY =
+      [:include_directory, :library_directory, :directory?].freeze
 
-      raise NoEntryError.new(path, location)
+    def exist_path?(path, method_name)
+      if METHODS_TARGETING_DIRECTORY.include?(method_name)
+        File.directory?(path)
+      else
+        File.file?(path)
+      end
     end
   end
 end

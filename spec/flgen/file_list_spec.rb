@@ -558,44 +558,6 @@ RSpec.describe FLGen::FileList do
     end
   end
 
-  describe '#define_macro' do
-    it 'マクロを定義する' do
-      file_list = described_class.new(context, path)
-
-      expect(context).to receive(:define_macro).with(:FOO, nil)
-      expect(context).to receive(:define_macro).with(:BAR, 1)
-
-      file_list.define_macro(:FOO)
-      file_list.define_macro(:BAR, 1)
-    end
-  end
-
-  describe '#macro?/#macro_defined?' do
-    let(:macros) do
-      [:FOO, :BAR]
-    end
-
-    it '定義済みマクロかどうかを示す' do
-      file_list = described_class.new(context, path)
-      context.macros << macros[0]
-      context.macros << macros[1]
-
-      expect(file_list.macro?(:FOO)).to be true
-      expect(file_list.macro?('FOO')).to be true
-      expect(file_list.macro?(:BAR)).to be true
-      expect(file_list.macro?('BAR')).to be true
-      expect(file_list.macro?(:BAZ)).to be false
-      expect(file_list.macro?('BAZ')).to be false
-
-      expect(file_list.macro_defined?(:FOO)).to be true
-      expect(file_list.macro_defined?('FOO')).to be true
-      expect(file_list.macro_defined?(:BAR)).to be true
-      expect(file_list.macro_defined?('BAR')).to be true
-      expect(file_list.macro_defined?(:BAZ)).to be false
-      expect(file_list.macro_defined?('BAZ')).to be false
-    end
-  end
-
   describe '#include_directory' do
     let(:include_directories) do
       ['foo', 'bar/baz']
@@ -1383,6 +1345,44 @@ RSpec.describe FLGen::FileList do
         allow(File).to receive(:directory?).with(File.join(base, directory_names[1])).and_return(false)
         expect(file_list.directory?(directory_names[1], from: base)).to eq false
       end
+    end
+  end
+
+  describe '#define_macro' do
+    it 'マクロを定義する' do
+      file_list = described_class.new(context, path)
+
+      expect(context).to receive(:define_macro).with(:FOO, nil)
+      expect(context).to receive(:define_macro).with(:BAR, 1)
+
+      file_list.define_macro(:FOO)
+      file_list.define_macro(:BAR, 1)
+    end
+  end
+
+  describe '#macro?/#macro_defined?' do
+    let(:macros) do
+      [:FOO, :BAR]
+    end
+
+    it '定義済みマクロかどうかを示す' do
+      file_list = described_class.new(context, path)
+      context.macros << macros[0]
+      context.macros << macros[1]
+
+      expect(file_list.macro?(:FOO)).to be true
+      expect(file_list.macro?('FOO')).to be true
+      expect(file_list.macro?(:BAR)).to be true
+      expect(file_list.macro?('BAR')).to be true
+      expect(file_list.macro?(:BAZ)).to be false
+      expect(file_list.macro?('BAZ')).to be false
+
+      expect(file_list.macro_defined?(:FOO)).to be true
+      expect(file_list.macro_defined?('FOO')).to be true
+      expect(file_list.macro_defined?(:BAR)).to be true
+      expect(file_list.macro_defined?('BAR')).to be true
+      expect(file_list.macro_defined?(:BAZ)).to be false
+      expect(file_list.macro_defined?('BAZ')).to be false
     end
   end
 
