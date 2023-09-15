@@ -6,11 +6,11 @@ module FLGen
       @context = context
       @path = path
       @root_directories = extract_root
-      @default_search_path = {}
+      @default_search_path = init_default_search_path
     end
 
-    def default_search_path(**seach_paths)
-      @default_search_path.update(seach_paths)
+    def default_search_path(**search_paths)
+      @default_search_path.update(search_paths)
     end
 
     def reset_default_search_path(*target_types)
@@ -50,6 +50,17 @@ module FLGen
     def library_directory(path, from: nil, raise_error: true)
       location = caller_location
       add_directory_entry(path, from, location, raise_error, :library_directory)
+    end
+
+    def find_files(*patterns, from: nil, &block)
+      location = caller_location
+      glob_files(patterns, __method__, from, location)
+        .then { |e| block ? e.each(&block) : e.to_a }
+    end
+
+    def find_file(*patterns, from: nil)
+      location = caller_location
+      glob_files(patterns, __method__, from, location).first
     end
 
     def file?(path, from: :current)
@@ -96,6 +107,10 @@ module FLGen
       File.exist?(path.join('.git').to_s)
     end
 
+    def init_default_search_path
+      Hash.new { |_, key| key == :file_list ? :root : :current }
+    end
+
     def load_file_list(path, from, location, raise_error)
       unless (list_path = extract_file_path(path, from, location, :file_list))
         raise_no_entry_error(path, location, raise_error)
@@ -135,6 +150,17 @@ module FLGen
       @context.__send__(method, directory_path)
     end
 
+    def glob_files(patterns, method_name, from, location)
+      patterns.product(search_root('', from, location, method_name))
+        .lazy.flat_map { |patten, base| do_glob_files(patten, base) }
+    end
+
+    def do_glob_files(patten, base)
+      Dir.glob(patten, base: base)
+        .map { |path| File.join(base, path) }
+        .select(&File.method(:file?))
+    end
+
     def caller_location
       caller_locations(2, 1).first
     end
@@ -155,13 +181,8 @@ module FLGen
 
     FROM_KEYWORDS = [:cwd, :current, :local_root, :root].freeze
 
-    DEFAULT_SEARCH_PATH = {
-      file_list: :root, source_file: :current, library_file: :current, file: :current,
-      include_directory: :current, library_directory: :current, directory: :current
-    }.freeze
-
     def search_root(path, from, location, type)
-      search_path = from || @default_search_path[type] || DEFAULT_SEARCH_PATH[type]
+      search_path = from || @default_search_path[type]
       if absolute_path?(path)
         ['']
       elsif FROM_KEYWORDS.include?(search_path)

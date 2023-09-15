@@ -922,6 +922,274 @@ RSpec.describe FLGen::FileList do
     end
   end
 
+  describe '#find_files/#find_file' do
+    def mock_glab(patten, results)
+      results.each do |(base, paths)|
+        allow(Dir).to receive(:glob).with(patten, base: base).and_return(Array(paths))
+        Array(paths).each do |path|
+          allow(File).to receive(:file?).with(File.join(base, path)).and_return(true)
+        end
+      end
+    end
+
+    let(:file_names) do
+      ['foo.sv', 'bar.sv', 'baz.v', 'qux.v']
+    end
+
+    before do
+      allow(Dir).to receive(:glob).with(any_args).and_call_original
+    end
+
+    it '呼び出し元を起点として、入力パターンに一致するファイル一覧を返す' do
+      file_list = described_class.new(context, path)
+
+      mock_glab('*.sv', { __dir__ => file_names[0..1] })
+      expect(file_list.find_file('*.sv'))
+        .to eq File.join(__dir__, file_names[0])
+      expect(file_list.find_files('*.sv'))
+        .to match([
+          File.join(__dir__, file_names[0]),
+          File.join(__dir__, file_names[1])
+        ])
+      expect(file_list.find_file('*.v')).to be_nil
+      expect(file_list.find_files('*.v')).to be_empty
+
+      mock_glab('*.v' , { __dir__ => file_names[2..3] })
+      expect(file_list.find_file('*.sv', '*.v'))
+        .to eq File.join(__dir__, file_names[0])
+      expect(file_list.find_files('*.sv', '*.v'))
+        .to match([
+          File.join(__dir__, file_names[0]),
+          File.join(__dir__, file_names[1]),
+          File.join(__dir__, file_names[2]),
+          File.join(__dir__, file_names[3])
+        ])
+    end
+
+    context 'from: :rootが指定された場合' do
+      it 'ルートディレクトリを起点として、入力パターンに一致するファイル一覧を返す' do
+        file_list = described_class.new(context, path)
+
+        mock_glab('*.sv', { root_directories[0] => file_names[0], root_directories[1] => file_names[1] })
+        expect(file_list.find_file('*.sv', from: :root))
+          .to eq File.join(root_directories[0], file_names[0])
+        expect(file_list.find_files('*.sv', from: :root))
+          .to match([
+            File.join(root_directories[0], file_names[0]),
+            File.join(root_directories[1], file_names[1])
+          ])
+        expect(file_list.find_file('*.v', from: :root)).to be_nil
+        expect(file_list.find_files('*.v', from: :root)).to be_empty
+
+        mock_glab('*.v', { root_directories[0] => file_names[2], root_directories[1] => file_names[3] })
+        expect(file_list.find_file('*.sv', '*.v', from: :root))
+          .to eq File.join(root_directories[0], file_names[0])
+        expect(file_list.find_files('*.sv', '*.v', from: :root))
+          .to match([
+            File.join(root_directories[0], file_names[0]),
+            File.join(root_directories[1], file_names[1]),
+            File.join(root_directories[0], file_names[2]),
+            File.join(root_directories[1], file_names[3])
+          ])
+      end
+    end
+
+    context 'from: :local_rootが指定された場合' do
+      it '直近のルートディレクトリを起点として、入力パターンに一致するファイル一覧を返す' do
+        file_list = described_class.new(context, path)
+
+        mock_glab('*.sv', { root_directories.last => file_names[0..1] })
+        expect(file_list.find_file('*.sv', from: :local_root))
+          .to eq File.join(root_directories.last, file_names[0])
+        expect(file_list.find_files('*.sv', from: :local_root))
+          .to match([
+            File.join(root_directories.last, file_names[0]),
+            File.join(root_directories.last, file_names[1])
+          ])
+        expect(file_list.find_file('*.v', from: :local_root)).to be_nil
+        expect(file_list.find_files('*.v', from: :local_root)).to be_empty
+
+        mock_glab('*.v', { root_directories.last => file_names[2..3] })
+        expect(file_list.find_file('*.sv', '*.v', from: :local_root))
+          .to eq File.join(root_directories.last, file_names[0])
+        expect(file_list.find_files('*.sv', '*.v', from: :local_root))
+          .to match([
+            File.join(root_directories.last, file_names[0]),
+            File.join(root_directories.last, file_names[1]),
+            File.join(root_directories.last, file_names[2]),
+            File.join(root_directories.last, file_names[3])
+          ])
+      end
+    end
+
+    context 'from: :currentが指定された場合' do
+      it '呼び出し元を起点として、入力パターンに一致するファイル一覧を返す' do
+        file_list = described_class.new(context, path)
+
+        mock_glab('*.sv', { __dir__ => file_names[0..1] })
+        expect(file_list.find_file('*.sv', from: :current))
+          .to eq File.join(__dir__, file_names[0])
+        expect(file_list.find_files('*.sv', from: :current))
+          .to match([
+            File.join(__dir__, file_names[0]),
+            File.join(__dir__, file_names[1])
+          ])
+        expect(file_list.find_file('*.v', from: :current)).to be_nil
+        expect(file_list.find_files('*.v', from: :current)).to be_empty
+
+        mock_glab('*.v' , { __dir__ => file_names[2..3] })
+        expect(file_list.find_file('*.sv', '*.v', from: :current))
+          .to eq File.join(__dir__, file_names[0])
+        expect(file_list.find_files('*.sv', '*.v', from: :current))
+          .to match([
+            File.join(__dir__, file_names[0]),
+            File.join(__dir__, file_names[1]),
+            File.join(__dir__, file_names[2]),
+            File.join(__dir__, file_names[3])
+          ])
+      end
+    end
+
+    context 'from: :cwdが指定された場合' do
+      it '実行ディレクトリを起点として、入力パターンに一致するファイル一覧を返す' do
+        file_list = described_class.new(context, path)
+
+        mock_cwd
+        mock_glab('*.sv', { __dir__ => file_names[0..1] })
+        expect(file_list.find_file('*.sv', from: :cwd))
+          .to eq File.join(__dir__, file_names[0])
+        expect(file_list.find_files('*.sv', from: :cwd))
+          .to match([
+            File.join(__dir__, file_names[0]),
+            File.join(__dir__, file_names[1])
+          ])
+        expect(file_list.find_file('*.v', from: :cwd)).to be_nil
+        expect(file_list.find_files('*.v', from: :cwd)).to be_empty
+
+        mock_cwd
+        mock_glab('*.v' , { __dir__ => file_names[2..3] })
+        expect(file_list.find_file('*.sv', '*.v', from: :cwd))
+          .to eq File.join(__dir__, file_names[0])
+        expect(file_list.find_files('*.sv', '*.v', from: :cwd))
+          .to match([
+            File.join(__dir__, file_names[0]),
+            File.join(__dir__, file_names[1]),
+            File.join(__dir__, file_names[2]),
+            File.join(__dir__, file_names[3])
+          ])
+      end
+    end
+
+    context 'from:でベースディレクトリが指定された場合' do
+      it 'ベースディレクトリを起点として、入力パターンに一致するファイル一覧を返す' do
+        file_list = described_class.new(context, path)
+        base = non_root_directories.sample
+
+        mock_glab('*.sv', { base => file_names[0..1] })
+        expect(file_list.find_file('*.sv', from: base))
+          .to eq File.join(base, file_names[0])
+        expect(file_list.find_files('*.sv', from: base))
+          .to match([
+            File.join(base, file_names[0]),
+            File.join(base, file_names[1])
+          ])
+        expect(file_list.find_file('*.v', from: base)).to be_nil
+        expect(file_list.find_files('*.v', from: base)).to be_empty
+
+        mock_glab('*.v' , { base => file_names[2..3] })
+        expect(file_list.find_file('*.sv', '*.v', from: base))
+          .to eq File.join(base, file_names[0])
+        expect(file_list.find_files('*.sv', '*.v', from: base))
+          .to match([
+            File.join(base, file_names[0]),
+            File.join(base, file_names[1]),
+            File.join(base, file_names[2]),
+            File.join(base, file_names[3])
+          ])
+      end
+    end
+
+    specify '#default_search_pathでfrom:未指定時の挙動を変更できる' do
+      file_list = file_list = described_class.new(context, path)
+
+      mock_glab('*.sv', { root_directories[0] => file_names[0], root_directories[1] => file_names[1] })
+      file_list.default_search_path(find_files: :root, find_file: :root)
+      expect(file_list.find_file('*.sv'))
+        .to eq File.join(root_directories[0], file_names[0])
+      expect(file_list.find_files('*.sv'))
+        .to match([
+          File.join(root_directories[0], file_names[0]),
+          File.join(root_directories[1], file_names[1])
+        ])
+
+      mock_glab('*.sv', { root_directories.last => file_names[0..1] })
+      file_list.default_search_path(find_files: :local_root, find_file: :local_root)
+      expect(file_list.find_file('*.sv'))
+        .to eq File.join(root_directories.last, file_names[0])
+      expect(file_list.find_files('*.sv'))
+        .to match([
+          File.join(root_directories.last, file_names[0]),
+          File.join(root_directories.last, file_names[1])
+        ])
+
+      mock_glab('*.sv', { __dir__ => file_names[0..1] })
+      file_list.default_search_path(find_files: :current, find_file: :current)
+      expect(file_list.find_file('*.sv'))
+        .to eq File.join(__dir__, file_names[0])
+      expect(file_list.find_files('*.sv'))
+        .to match([
+          File.join(__dir__, file_names[0]),
+          File.join(__dir__, file_names[1])
+        ])
+
+      mock_cwd
+      mock_glab('*.sv', { __dir__ => file_names[0..1] })
+      file_list.default_search_path(find_files: :cwd, find_file: :cwd)
+      expect(file_list.find_file('*.sv'))
+        .to eq File.join(__dir__, file_names[0])
+      expect(file_list.find_files('*.sv'))
+        .to match([
+          File.join(__dir__, file_names[0]),
+          File.join(__dir__, file_names[1])
+        ])
+
+      base = non_root_directories.sample
+      mock_glab('*.sv', { base => file_names[0..1] })
+      file_list.default_search_path(find_files: base, find_file: base)
+      expect(file_list.find_file('*.sv'))
+        .to eq File.join(base, file_names[0])
+      expect(file_list.find_files('*.sv'))
+        .to match([
+          File.join(base, file_names[0]),
+          File.join(base, file_names[1])
+        ])
+
+      mock_glab('*.sv', { __dir__ => file_names[0..1] })
+      file_list.reset_default_search_path(:find_files, :find_file)
+      expect(file_list.find_file('*.sv'))
+        .to eq File.join(__dir__, file_names[0])
+      expect(file_list.find_files('*.sv'))
+        .to match([
+          File.join(__dir__, file_names[0]),
+          File.join(__dir__, file_names[1])
+        ])
+    end
+
+    context 'ブロックを与えた場合' do
+      specify '一致したファイルを引数としてブロックを実行する' do
+        file_list = described_class.new(context, path)
+
+        mock_glab('*.sv', { __dir__ => file_names[0..1] })
+        expect { |b|
+          file_list.find_files('*.sv', &b)
+        }.to yield_successive_args(*file_names[0..1].map { |f| File.join(__dir__, f) })
+        expect { |b|
+          file_list.find_files('.v', &b)
+        }.not_to yield_control
+      end
+    end
+  end
+
   describe '#file?' do
     let(:file_names) do
       ['foo.sv', 'bar.sv', 'baz.sv']
