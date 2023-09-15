@@ -34,14 +34,19 @@ FLGen prives APIs listed below to describe your filelists.
     * Add the given directory to the list of include direcotries.
 * `library_directory(path, from: nil)`
     * Add the given directory to the list of library directories.
+* `find_files(patterns, from: nil)`
+    * Return an array of filenames matching the given patterns strings.
+    * See [here](https://docs.ruby-lang.org/en/3.2/Dir.html#method-c-glob) for the format of a pattern string.
+* `find_file(patterns, from: nil)`
+    * Return the first filename matching the given pattern strings.
+* `file?(path, from: :current)`
+    * Return `true` if the given file exists.
+* `directory?(path, from: :current)`
+    * Return `true` if the given directory exists.
 * `define_macro(name, value = nil)`
     * Define a text macro.
 * `macro?(name)`/`macro_defined?(name)`
     * Return `true` if the given macro is defined.
-* `file?(path, from: :current)`
-    * Return `treu` if the given file exists.
-* `directory?(path, from: :current)`
-    * Return `true` if the given directory exists.
 * `env?(name)`
     * Return `true` if the givne environment variable is defined.
 * `env(name)`
@@ -96,6 +101,8 @@ Default behaviors when the `from` argument is not spcified are listed below:
 | library_file      | :current                |
 | include_directory | :current                |
 | library_directory | :current                |
+| find_files        | :current                |
+| find_file         | :current                |
 
 You can change the above default behaviors by using the `default_search_path` API.
 In addition, you can reset the default behaviors by using the `reset_default_search_path` API.
