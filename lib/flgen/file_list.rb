@@ -29,12 +29,12 @@ module FLGen
     define_method(:include_directory, instance_method(:source_file))
     define_method(:library_directory, instance_method(:source_file))
 
-    def find_files(*patterns, from: nil, &block)
+    def find_files(patterns, from: nil, &block)
       glob_files(patterns, from, __callee__, caller_location)
         .then { |e| block ? e.each(&block) : e.to_a }
     end
 
-    def find_file(*patterns, from: nil)
+    def find_file(patterns, from: nil)
       glob_files(patterns, from, __callee__, caller_location).first
     end
 
@@ -127,12 +127,12 @@ module FLGen
     end
 
     def glob_files(patterns, from, method_name, location)
-      patterns.product(search_root('', from, method_name, location))
-        .lazy.flat_map { |patten, base| do_glob_files(patten, base) }
+      search_root('', from, method_name, location)
+        .lazy.flat_map { |base| do_glob_files(patterns, base) }
     end
 
-    def do_glob_files(patten, base)
-      Dir.glob(patten, base: base)
+    def do_glob_files(patterns, base)
+      Dir.glob(Array(patterns), base: base)
         .map { |path| File.join(base, path) }
         .select(&File.method(:file?))
     end
