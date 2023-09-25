@@ -10,6 +10,6 @@ group :developmend do
   gem 'rake'
   gem 'rspec', '~> 3.12.0'
   gem 'rubocop', '~> 1.40.0'
-  gem 'simplecov', '~> 0.21.0'
+  gem 'simplecov', '~> 0.22.0'
   gem 'simplecov-cobertura', '~> 2.1.0'
 end
