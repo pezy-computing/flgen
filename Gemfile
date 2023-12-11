@@ -9,7 +9,7 @@ group :developmend do
   gem 'bump', '~> 0.10.0'
   gem 'rake'
   gem 'rspec', '~> 3.12.0'
-  gem 'rubocop', '~> 1.58.0'
+  gem 'rubocop', '~> 1.59.0'
   gem 'simplecov', '~> 0.22.0'
   gem 'simplecov-cobertura', '~> 2.1.0'
 end
