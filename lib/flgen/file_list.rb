@@ -117,7 +117,7 @@ module FLGen
         return
       end
 
-      @context.__send__("add_#{method_name}".to_sym, extracted_path)
+      @context.__send__("add_#{method_name}", extracted_path)
     end
 
     def raise_no_entry_error(path, location, raise_error)
