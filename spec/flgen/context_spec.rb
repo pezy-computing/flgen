@@ -235,6 +235,50 @@ RSpec.describe FLGen::Context do
     end
   end
 
+  describe '事前定義済みマクロ' do
+    context '対象ツールがVCSの場合' do
+      specify ':VCSが定義される' do
+        options[:tool] = :vcs
+        expect(context.macros).to match([:VCS])
+      end
+    end
+
+    context '対象ツールがDesign Compilerの場合' do
+      specify 'SYNTHESISが定義される' do
+        options[:tool] = :design_compiler
+        expect(context.macros).to match([:SYNTHESIS])
+      end
+    end
+
+    context '対象ツールがFormalityの場合' do
+      specify 'SYNTHESISが定義される' do
+        options[:tool] = :formality
+        expect(context.macros).to match([:SYNTHESIS])
+      end
+    end
+
+    context '対象ツールがXceliumの場合' do
+      specify ':XCELIUMが定義される' do
+        options[:tool] = :xcelium
+        expect(context.macros).to match([:XCELIUM])
+      end
+    end
+
+    context '対象ツールがVivadoの場合' do
+      specify 'SYNTHESISが定義される' do
+        options[:tool] = :vivado
+        expect(context.macros).to match([:SYNTHESIS])
+      end
+    end
+
+    context '対象ツールがVivado simulatorの場合' do
+      specify 'SYNTHESISが定義される' do
+        options[:tool] = :vivado_simulator
+        expect(context.macros).to match([:XILINX_SIMULATOR])
+      end
+    end
+  end
+
   describe '#add_include_directory' do
     let(:directories) do
       ['/foo/bar', '/fizz/buzz']

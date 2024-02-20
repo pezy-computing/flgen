@@ -4,6 +4,7 @@ module FLGen
   class Context
     def initialize(options)
       @options = options
+      define_predefined_macros
     end
 
     attr_reader :options
@@ -35,7 +36,7 @@ module FLGen
         else
           [macro, value]
         end
-      add_macro_definition(k.to_sym, v)
+      add_macro_definition(k, v, false)
     end
 
     def macros
@@ -95,8 +96,21 @@ module FLGen
       arguments.none? { |arg| arg.type == :library_file && arg.path == file }
     end
 
-    def add_macro_definition(name, value)
+    def define_predefined_macros
+      return unless options[:tool]
+
+      list_name = File.join(__dir__, 'predefined_macros.yaml')
+      list = YAML.safe_load_file(list_name, filename: list_name, symbolize_names: true)
+      list[options[:tool]]&.each { |macro| add_macro_definition(macro, nil, true) }
+    end
+
+    def add_macro_definition(macro, value, predefined)
+      name = macro.to_sym
       macros << name unless macros.include?(name)
+      add_macro_argument(name, value) unless predefined
+    end
+
+    def add_macro_argument(name, value)
       arguments
         .delete_if { |argument| argument.type == :define && argument.name == name }
       add_compile_argument(Arguments::Define.new(name, value))
