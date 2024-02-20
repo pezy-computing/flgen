@@ -1,0 +1,12 @@
+vcs:
+  - VCS
+design_compiler:
+  - SYNTHESIS
+formality:
+  - SYNTHESIS
+xcelium:
+  - XCELIUM
+vivado:
+  - SYNTHESIS
+vivado_simulator:
+  - XILINX_SIMULATOR

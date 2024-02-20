@@ -3,6 +3,7 @@
 require 'digest/md5'
 require 'optparse'
 require 'pathname'
+require 'yaml'
 require_relative 'flgen/version'
 require_relative 'flgen/exceptions'
 require_relative 'flgen/source_file'
