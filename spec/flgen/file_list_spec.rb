@@ -928,6 +928,36 @@ RSpec.describe FLGen::FileList do
         ])
     end
 
+    context 'ブロックが与えられた場合' do
+      it 'パターンに一致したパスを引数として、ブロックを実行する' do
+        file_list = described_class.new(context, path)
+
+        mock_glob('*.sv', { __dir__ => file_names[0..1] })
+        expect { |b| file_list.find_file('*.sv', &b) }
+          .to yield_with_args(File.join(__dir__, file_names[0]))
+        expect { |b| file_list.find_files('*.sv', &b) }
+          .to yield_successive_args(
+            File.join(__dir__, file_names[0]),
+            File.join(__dir__, file_names[1])
+          )
+        expect { |b| file_list.find_file('*.v', &b) }
+          .not_to yield_control
+        expect { |b| file_list.find_files('*.v', &b) }
+          .not_to yield_control
+
+        mock_glob(['*.sv', '*.v'], { __dir__ => file_names })
+        expect { |b| file_list.find_file(['*.sv', '*.v'], &b) }
+          .to yield_with_args(File.join(__dir__, file_names[0]))
+        expect { |b| file_list.find_files(['*.sv', '*.v'], &b) }
+          .to yield_successive_args(
+            File.join(__dir__, file_names[0]),
+            File.join(__dir__, file_names[1]),
+            File.join(__dir__, file_names[2]),
+            File.join(__dir__, file_names[3])
+          )
+      end
+    end
+
     context 'from: :rootが指定された場合' do
       it 'ルートディレクトリを起点として、入力パターンに一致するファイル一覧を返す' do
         file_list = described_class.new(context, path)
