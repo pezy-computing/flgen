@@ -31,11 +31,12 @@ module FLGen
 
     def find_files(patterns, from: nil, &block)
       glob_files(patterns, from, __callee__, caller_location)
-        .then { |e| block ? e.each(&block) : e.to_a }
+        .then { |e| block_given? && (return e.each(&block)) || e.to_a }
     end
 
     def find_file(patterns, from: nil)
-      glob_files(patterns, from, __callee__, caller_location).first
+      glob_files(patterns, from, __callee__, caller_location)
+        .first&.then { |f| block_given? && (return yield f) || f }
     end
 
     def file?(path, from: :current)
