@@ -50,10 +50,14 @@ module FLGen
     end
 
     def macro?(macro)
-      @context.macros.include?(macro.to_sym)
+      @context.macros.key?(macro.to_sym)
     end
 
     alias_method :macro_defined?, :macro?
+
+    def macro(name)
+      @context.macros[name.to_sym]
+    end
 
     def env?(name)
       ENV.key?(name.to_s)
