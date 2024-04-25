@@ -40,7 +40,7 @@ module FLGen
     end
 
     def macros
-      @macros ||= []
+      @macros ||= {}
     end
 
     def add_include_directory(directory)
@@ -106,7 +106,7 @@ module FLGen
 
     def add_macro_definition(macro, value, predefined)
       name = macro.to_sym
-      macros << name unless macros.include?(name)
+      macros[name] = value || true
       add_macro_argument(name, value) unless predefined
     end
 

@@ -190,7 +190,7 @@ RSpec.describe FLGen::Context do
     it 'マクロを定義する' do
       context.define_macro(:FOO)
       context.define_macro('BAR=1')
-      expect(context.macros).to match([:FOO, :BAR])
+      expect(context.macros).to match(FOO: true, BAR: '1')
     end
 
     it 'コンパイル引数として追加する' do
@@ -211,7 +211,7 @@ RSpec.describe FLGen::Context do
           context.define_macro(:FOO)
           context.define_macro('BAR=1')
         }.not_to change { context.arguments.size }
-        expect(context.macros).to match([:FOO, :BAR])
+        expect(context.macros).to match(FOO: true, BAR: '1')
       end
     end
 
@@ -219,17 +219,24 @@ RSpec.describe FLGen::Context do
       it '値を上書きする' do
         context.define_macro(:FOO)
         context.define_macro('BAR=1')
-        expect(context.macros).to match([:FOO, :BAR])
+        expect(context.macros).to match(FOO: true, BAR: '1')
         expect(context.arguments).to match([
           match_argument(:define, name: :FOO, value: be_nil),
           match_argument(:define, name: :BAR, value: '1')
         ])
 
         context.define_macro('FOO=2')
-        expect(context.macros).to match([:FOO, :BAR])
+        expect(context.macros).to match(FOO: '2', BAR: '1')
         expect(context.arguments).to match([
           match_argument(:define, name: :BAR, value: '1'),
           match_argument(:define, name: :FOO, value: '2')
+        ])
+
+        context.define_macro('BAR')
+        expect(context.macros).to match(FOO: '2', BAR: true)
+        expect(context.arguments).to match([
+          match_argument(:define, name: :FOO, value: '2'),
+          match_argument(:define, name: :BAR, value: be_nil)
         ])
       end
     end
@@ -239,42 +246,42 @@ RSpec.describe FLGen::Context do
     context '対象ツールがVCSの場合' do
       specify ':VCSが定義される' do
         options[:tool] = :vcs
-        expect(context.macros).to match([:VCS])
+        expect(context.macros).to match(VCS: true)
       end
     end
 
     context '対象ツールがDesign Compilerの場合' do
       specify 'SYNTHESISが定義される' do
         options[:tool] = :design_compiler
-        expect(context.macros).to match([:SYNTHESIS])
+        expect(context.macros).to match(SYNTHESIS: true)
       end
     end
 
     context '対象ツールがFormalityの場合' do
       specify 'SYNTHESISが定義される' do
         options[:tool] = :formality
-        expect(context.macros).to match([:SYNTHESIS])
+        expect(context.macros).to match(SYNTHESIS: true)
       end
     end
 
     context '対象ツールがXceliumの場合' do
       specify ':XCELIUMが定義される' do
         options[:tool] = :xcelium
-        expect(context.macros).to match([:XCELIUM])
+        expect(context.macros).to match(XCELIUM: true)
       end
     end
 
     context '対象ツールがVivadoの場合' do
       specify 'SYNTHESISが定義される' do
         options[:tool] = :vivado
-        expect(context.macros).to match([:SYNTHESIS])
+        expect(context.macros).to match(SYNTHESIS: true)
       end
     end
 
     context '対象ツールがVivado simulatorの場合' do
       specify 'SYNTHESISが定義される' do
         options[:tool] = :vivado_simulator
-        expect(context.macros).to match([:XILINX_SIMULATOR])
+        expect(context.macros).to match(XILINX_SIMULATOR: true)
       end
     end
   end

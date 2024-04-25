@@ -23,7 +23,7 @@ RSpec.describe FLGen::FileList do
   end
 
   let(:context) do
-    double('context', loaded_file_lists: [], options: {}, macros: [])
+    double('context', loaded_file_lists: [], options: {}, macros: {})
   end
 
   before do
@@ -1397,8 +1397,8 @@ RSpec.describe FLGen::FileList do
 
     it '定義済みマクロかどうかを示す' do
       file_list = described_class.new(context, path)
-      context.macros << macros[0]
-      context.macros << macros[1]
+      context.macros[macros[0]] = true
+      context.macros[macros[1]] = true
 
       expect(file_list.macro?(:FOO)).to be true
       expect(file_list.macro?('FOO')).to be true
@@ -1413,6 +1413,30 @@ RSpec.describe FLGen::FileList do
       expect(file_list.macro_defined?('BAR')).to be true
       expect(file_list.macro_defined?(:BAZ)).to be false
       expect(file_list.macro_defined?('BAZ')).to be false
+    end
+  end
+
+  describe '#macro' do
+    it '指定したマクロの値を返す' do
+      file_list = described_class.new(context, path)
+      context.macros[:FOO] = 'FOO'
+      context.macros[:BAR] = true
+
+      expect(file_list.macro(:FOO)).to eq 'FOO'
+      expect(file_list.macro('FOO')).to eq 'FOO'
+      expect(file_list.macro(:BAR)).to be true
+      expect(file_list.macro('BAR')).to be true
+    end
+
+    context '指定したマクロが未定義の場合' do
+      it 'nilを返す' do
+        file_list = described_class.new(context, path)
+
+        expect(file_list.macro(:FOO)).to be_nil
+        expect(file_list.macro('FOO')).to be_nil
+        expect(file_list.macro(:BAR)).to be_nil
+        expect(file_list.macro('BAR')).to be_nil
+      end
     end
   end
 

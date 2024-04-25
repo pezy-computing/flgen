@@ -47,6 +47,8 @@ FLGen prives APIs listed below to describe your filelists.
     * Define a text macro.
 * `macro?(name)`/`macro_defined?(name)`
     * Return `true` if the given macro is defined.
+* `macro(name)`
+    * Return the value of the given macro.
 * `env?(name)`
     * Return `true` if the givne environment variable is defined.
 * `env(name)`
