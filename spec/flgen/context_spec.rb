@@ -271,6 +271,13 @@ RSpec.describe FLGen::Context do
       end
     end
 
+    context '対象ツールがDSimの場合' do
+      specify ':DSIMが定義される' do
+        options[:tool] = :dsim
+        expect(context.macros).to match(DSIM: true)
+      end
+    end
+
     context '対象ツールがVivadoの場合' do
       specify 'SYNTHESISが定義される' do
         options[:tool] = :vivado

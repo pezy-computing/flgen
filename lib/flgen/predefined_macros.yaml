@@ -6,6 +6,8 @@ formality:
   - SYNTHESIS
 xcelium:
   - XCELIUM
+dsim:
+  - DSIM
 vivado:
   - SYNTHESIS
 vivado_simulator:
