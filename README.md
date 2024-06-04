@@ -45,6 +45,8 @@ FLGen prives APIs listed below to describe your filelists.
     * Return `true` if the given directory exists.
 * `define_macro(name, value = nil)`
     * Define a text macro.
+* `undefine_macro(name)`
+    * Undefine the given macro.
 * `macro?(name)`/`macro_defined?(name)`
     * Return `true` if the given macro is defined.
 * `macro(name)`
