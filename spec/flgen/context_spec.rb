@@ -242,6 +242,31 @@ RSpec.describe FLGen::Context do
     end
   end
 
+  describe '#undefine_macro' do
+    it '定義済みマクロを無効化する' do
+      context.define_macro(:FOO)
+      context.define_macro('BAR=1')
+      context.define_macro(:BAZ)
+
+      context.undefine_macro(:QUX)
+      context.undefine_macro(:BAZ)
+      context.undefine_macro(:FOO)
+
+      expect(context.macros).to match(BAR: '1')
+    end
+
+    specify '事前定義済みマクロは無効化しない' do
+      options[:tool] = :vcs
+
+      context.define_macro(:FOO)
+      context.define_macro(:BAR)
+      context.undefine_macro(:FOO)
+      context.undefine_macro(:VCS)
+
+      expect(context.macros).to match(VCS: true, BAR: true)
+    end
+  end
+
   describe '事前定義済みマクロ' do
     context '対象ツールがVCSの場合' do
       specify ':VCSが定義される' do

@@ -49,6 +49,10 @@ module FLGen
       @context.define_macro(macro, value)
     end
 
+    def undefine_macro(macro)
+      @context.undefine_macro(macro)
+    end
+
     def macro?(macro)
       @context.macros.key?(macro.to_sym)
     end
@@ -126,9 +130,7 @@ module FLGen
     end
 
     def raise_no_entry_error(path, location, raise_error)
-      return unless raise_error
-
-      raise NoEntryError.new(path, location)
+      raise_error && (raise NoEntryError.new(path, location))
     end
 
     def glob_files(patterns, from, method_name, location)

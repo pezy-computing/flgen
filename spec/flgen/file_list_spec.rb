@@ -1390,6 +1390,18 @@ RSpec.describe FLGen::FileList do
     end
   end
 
+  describe '#undefine_macro' do
+    it 'マクロを無効化する' do
+      file_list = described_class.new(context, path)
+
+      expect(context).to receive(:undefine_macro).with(:FOO)
+      expect(context).to receive(:undefine_macro).with(:BAR)
+
+      file_list.undefine_macro(:FOO)
+      file_list.undefine_macro(:BAR)
+    end
+  end
+
   describe '#macro?/#macro_defined?' do
     let(:macros) do
       [:FOO, :BAR]

@@ -39,6 +39,10 @@ module FLGen
       add_macro_definition(k, v, false)
     end
 
+    def undefine_macro(macro)
+      remove_macro(macro)
+    end
+
     def macros
       @macros ||= {}
     end
@@ -111,9 +115,17 @@ module FLGen
     end
 
     def add_macro_argument(name, value)
-      arguments
-        .delete_if { |argument| argument.type == :define && argument.name == name }
+      arguments.delete_if { |arg| macro_definition?(arg, name) }
       add_compile_argument(Arguments::Define.new(name, value))
+    end
+
+    def remove_macro(macro)
+      name = macro.to_sym
+      arguments.reject! { |arg| macro_definition?(arg, name) } && macros.delete(name)
+    end
+
+    def macro_definition?(arg, name)
+      arg.type == :define && arg.name == name
     end
 
     def directory_already_added?(type, path)
