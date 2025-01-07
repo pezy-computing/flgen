@@ -24,5 +24,5 @@ Gem::Specification.new do |spec|
   spec.bindir = 'exe'
   spec.executables = `git ls-files -- exe/*`.split($RS).map(&File.method(:basename))
   spec.require_paths = ['lib']
-  spec.required_ruby_version = '>= 3.0'
+  spec.required_ruby_version = '>= 3.1'
 end
