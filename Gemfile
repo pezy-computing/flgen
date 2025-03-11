@@ -17,7 +17,7 @@ group :development_test do
 end
 
 group :development_lint do
-  gem 'rubocop', '~> 1.72.2', require: false
+  gem 'rubocop', '~> 1.73.2', require: false
 end
 
 group :development_local do
