@@ -154,7 +154,7 @@ RSpec.describe FLGen::CLI do
           #  flgen version #{FLGen::VERSION}
           #  applied arguments
           #    --output=#{output}
-          #    --format=vivado-tcl
+          #    --format=genus-tcl
           #    #{file_list}
           set flgen_defines {}
           lappend flgen_defines -define #{macros[0]}
