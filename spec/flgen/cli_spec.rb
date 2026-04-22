@@ -148,7 +148,7 @@ RSpec.describe FLGen::CLI do
         allow(File).to receive(:open).with(output, 'w').and_yield(io)
       end
 
-      it 'vivadoで読み込み可能なTCLを書き出す' do
+      it 'genusで読み込み可能なTCLを書き出す' do
         cli.run(["--output=#{output}", '--format=genus-tcl', file_list])
         expect(io.string).to eq(<<~TCL)
           #  flgen version #{FLGen::VERSION}
